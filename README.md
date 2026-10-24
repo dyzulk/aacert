@@ -53,11 +53,13 @@ _Zero disruption to existing cron jobs &bull; RFC 8555 EAB binding &bull; Async 
 
 Install via `curl` with a single command:
 
+**Recommended (Fast CDN via jsDelivr):**
 ```bash
-# Recommended (Fast CDN via jsDelivr)
 curl -sSL https://cdn.jsdelivr.net/gh/dyzulk/aacert@main/setup.sh | bash
+```
 
-# Alternative (GitHub Raw)
+**Alternative (GitHub Raw):**
+```bash
 curl -sSL https://raw.githubusercontent.com/dyzulk/aacert/main/setup.sh | bash
 ```
 
@@ -184,6 +186,13 @@ If the `aacert` alias or command is no longer available in your current terminal
 ```bash
 bash ~/.aacert/uninstall.sh && rm -rf ~/.aacert
 ```
+
+> [!NOTE]
+> **Active Terminal Session:**
+> The uninstaller automatically removes aliases from shell profile files (`~/.bashrc`, `~/.zshrc`, etc.). To clear the alias from your current active terminal session immediately without opening a new window, run:
+> ```bash
+> unalias aacert 2>/dev/null || true
+> ```
 
 ---
 
