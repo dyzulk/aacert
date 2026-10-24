@@ -135,6 +135,16 @@ aacert enable
 aacert disable
 ```
 
+> [!TIP]
+> **Restarting aaPanel after configuration changes:**
+> Whenever you switch providers (`set-ca`), update credentials (`setup`), or toggle status (`enable` / `disable`), restart the aaPanel service so that background worker tasks (`BT-Panel` and `BT-Tasks`) reload the updated configuration into memory immediately:
+> ```bash
+> bt 1
+> # Or:
+> bt restart
+> ```
+> *(Or via panel CLI: `systemctl restart bt`)*
+
 ---
 
 ### Test Directory Connectivity
