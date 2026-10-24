@@ -17,11 +17,13 @@ rm -f "${PANEL_CLASS_DIR}/eab_helper.py"
 rm -f "/usr/local/bin/aacert"
 echo "[✓] Symlinks removed from ${PANEL_CLASS_DIR} and /usr/local/bin."
 
-# Remove alias from .bashrc and .zshrc
-sed -i '/# aacert - Multi-CA ACME Manager for aaPanel/d' "${HOME}/.bashrc" 2>/dev/null || true
-sed -i '/alias aacert=/d' "${HOME}/.bashrc" 2>/dev/null || true
-sed -i '/# aacert - Multi-CA ACME Manager for aaPanel/d' "${HOME}/.zshrc" 2>/dev/null || true
-sed -i '/alias aacert=/d' "${HOME}/.zshrc" 2>/dev/null || true
+# Remove alias from any shell profile files
+for rc in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.bash_profile" "${HOME}/.profile"; do
+    if [ -f "$rc" ]; then
+        sed -i '/# aacert - Multi-CA ACME Manager for aaPanel/d' "$rc" 2>/dev/null || true
+        sed -i '/alias aacert=/d' "$rc" 2>/dev/null || true
+    fi
+done
 echo "[✓] Aliases removed from shell profiles."
 
 # 2. Revert acme_v2.py

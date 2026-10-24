@@ -73,21 +73,52 @@ if [ -d "/usr/local/bin" ]; then
     echo "[✓] Created global command: ${BIN_LINK}"
 fi
 
-# Register alias in ~/.bashrc and ~/.zshrc for current user
-register_alias() {
-    local rc_file="$1"
-    if [ -f "$rc_file" ]; then
-        if ! grep -q "alias aacert=" "$rc_file"; then
-            echo "" >> "$rc_file"
-            echo "# aacert - Multi-CA ACME Manager for aaPanel" >> "$rc_file"
-            echo "alias aacert=\"python3 ${INSTALL_DIR}/manage.py\"" >> "$rc_file"
-            echo "[✓] Alias 'aacert' added to ${rc_file}"
+# Register alias based on active shell profile
+detect_and_register_alias() {
+    local target_rc=""
+    local current_shell
+    current_shell="$(basename "${SHELL:-bash}")"
+
+    case "$current_shell" in
+        zsh)
+            target_rc="${HOME}/.zshrc"
+            ;;
+        bash)
+            if [ -f "${HOME}/.bashrc" ]; then
+                target_rc="${HOME}/.bashrc"
+            elif [ -f "${HOME}/.bash_profile" ]; then
+                target_rc="${HOME}/.bash_profile"
+            fi
+            ;;
+        *)
+            if [ -f "${HOME}/.profile" ]; then
+                target_rc="${HOME}/.profile"
+            fi
+            ;;
+    esac
+
+    if [ -z "$target_rc" ] || [ ! -f "$target_rc" ]; then
+        for candidate in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.bash_profile" "${HOME}/.profile"; do
+            if [ -f "$candidate" ]; then
+                target_rc="$candidate"
+                break
+            fi
+        done
+    fi
+
+    if [ -n "$target_rc" ] && [ -f "$target_rc" ]; then
+        if ! grep -q "alias aacert=" "$target_rc"; then
+            echo "" >> "$target_rc"
+            echo "# aacert - Multi-CA ACME Manager for aaPanel" >> "$target_rc"
+            echo "alias aacert=\"python3 ${INSTALL_DIR}/manage.py\"" >> "$target_rc"
+            echo "[✓] Detected shell '$current_shell': registered alias in ${target_rc}"
+        else
+            echo "[✓] Alias already configured in ${target_rc}"
         fi
     fi
 }
 
-register_alias "${HOME}/.bashrc"
-register_alias "${HOME}/.zshrc"
+detect_and_register_alias
 
 # Run the patch installer
 bash "${INSTALL_DIR}/install.sh"
