@@ -268,12 +268,15 @@ def main():
     p_test = subparsers.add_parser("test", help="Test connection to ACME directory")
     p_test.add_argument("ca_name", nargs="?", default=None, help="Provider to test")
 
+    # help
+    subparsers.add_parser("help", help="Show this help message")
+
     # install / uninstall
     subparsers.add_parser("install", help="Install hook patch into aaPanel")
     subparsers.add_parser("uninstall", help="Remove hook patch from aaPanel")
 
     args = parser.parse_args()
-    if not args.command:
+    if not args.command or args.command == "help":
         parser.print_help()
         sys.exit(0)
 
