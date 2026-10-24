@@ -85,3 +85,9 @@ jobs:
             aacert.tar.gz \
             --title "aacert ${TAG}" \
             --notes-file release-notes.md
+
+      - name: Purge jsDelivr CDN Cache
+        uses: gacts/purge-jsdelivr-cache@v1
+        with:
+          url: |
+            https://cdn.jsdelivr.net/gh/dyzulk/aacert@main/setup.sh
