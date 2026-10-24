@@ -161,19 +161,65 @@ Once `aacert` is configured and enabled:
 
 ## Rollback & Uninstallation
 
-To remove the patch and revert aaPanel back to factory state:
+### 1. Automatic Cleanup (Recommended)
+
+Run the uninstallation command and remove user configuration files in one step:
+
 ```bash
-aacert uninstall
-```
-Or run directly:
-```bash
-bash ~/.aacert/uninstall.sh
+aacert uninstall && rm -rf ~/.aacert
 ```
 
-To remove all configuration files:
+If the `aacert` alias or command is no longer available in your current terminal session, run the uninstaller script directly:
+
 ```bash
-rm -rf ~/.aacert /usr/local/bin/aacert
+bash ~/.aacert/uninstall.sh && rm -rf ~/.aacert
 ```
+
+---
+
+### 2. Manual Step-by-Step Cleanup
+
+If you need to manually remove patches and restore aaPanel without using the script:
+
+```bash
+# Step 1: Remove symlinks from aaPanel and global bin
+rm -f /www/server/panel/class/acme_provider_hook.py
+rm -f /www/server/panel/class/eab_helper.py
+rm -f /usr/local/bin/aacert
+
+# Step 2: Remove aacert shell aliases across profiles
+for rc in ~/.bashrc ~/.zshrc ~/.bash_profile ~/.profile; do
+  [ -f "$rc" ] && sed -i '/# aacert - Multi-CA ACME Manager for aaPanel/d;/alias aacert=/d' "$rc"
+done
+
+# Step 3: Restore original factory acme_v2.py
+if [ -f "/www/server/panel/class/acme_v2.py.bak_orig" ]; then
+  cp /www/server/panel/class/acme_v2.py.bak_orig /www/server/panel/class/acme_v2.py
+  rm -f /www/server/panel/class/acme_v2.py.bak_orig
+fi
+
+# Step 4: Remove configuration and module files
+rm -rf ~/.aacert
+
+# Step 5: Restart aaPanel service
+bt 1
+```
+
+---
+
+### 3. Verifying Factory Integrity
+
+To verify that aaPanel has returned to its clean original state:
+
+1. Check that `acme_v2.py` no longer contains the hook:
+   ```bash
+   grep "AACERT_HOOK" /www/server/panel/class/acme_v2.py || echo "Original factory state verified (no hooks present)"
+   ```
+
+2. Test that aaPanel's internal Python environment initializes cleanly:
+   ```bash
+   /www/server/panel/pyenv/bin/python3 -c "import acme_v2; obj = acme_v2.acme_v2(); print('aaPanel ACME engine running in native factory mode.')"
+   ```
 
 ---
 
