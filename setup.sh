@@ -6,7 +6,6 @@
 # ====================================================================
 set -e
 
-REPO_API="https://api.github.com/repos/dyzulk/aacert/releases/latest"
 INSTALL_DIR="${HOME}/.aacert"
 BIN_LINK="/usr/local/bin/aacert"
 
@@ -46,16 +45,13 @@ if [ -f "${INSTALL_DIR}/config.json" ]; then
     cp "${INSTALL_DIR}/config.json" "$BACKUP_CFG"
 fi
 
-# Fetch latest release tarball URL from GitHub
-echo "[*] Resolving latest release from GitHub..."
-TARBALL_URL=$(curl -sSL "${REPO_API}" | grep -o 'https://github.com/dyzulk/aacert/releases/download/[^"]*/aacert\.tar\.gz' | head -n 1 || true)
+# Repository release parameters
+GITHUB_OWNER="dyzulk"
+GITHUB_REPO="aacert"
+ASSET_NAME="aacert.tar.gz"
+TARBALL_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/${ASSET_NAME}"
 
-# Fallback URL if API rate limit or structure changes
-if [ -z "$TARBALL_URL" ]; then
-    TARBALL_URL="https://github.com/dyzulk/aacert/releases/latest/download/aacert.tar.gz"
-fi
-
-echo "[*] Downloading release asset: ${TARBALL_URL}..."
+echo "[*] Downloading latest release asset (${ASSET_NAME})..."
 TMP_ARCHIVE=$(mktemp /tmp/aacert-XXXXXX.tar.gz)
 curl -f -sSL -L "${TARBALL_URL}" -o "${TMP_ARCHIVE}"
 
