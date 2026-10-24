@@ -1,3 +1,4 @@
+
 name: Release
 
 on:
@@ -28,12 +29,17 @@ jobs:
 
       - name: Resolve Release Tag
         id: resolve_tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG"
           else
-            TAG="${{ github.ref_name }}"
+            TAG="$REF_NAME"
           fi
+
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Generate Release Notes via Gemini AI
@@ -76,18 +82,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.generate-notes-and-package.outputs.release_tag }}
         run: |
-          gh release create "${TAG}" \
-            aacert.tar.gz \
-            --title "aacert ${TAG}" \
-            --notes-file release-notes.md \
-            --verify-tag || \
-          gh release create "${TAG}" \
-            aacert.tar.gz \
-            --title "aacert ${TAG}" \
-            --notes-file release-notes.md
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" aacert.tar.gz --clobber
+            gh release edit "${TAG}" \
+              --title "aacert ${TAG}" \
+              --notes-file release-notes.md
+          else
+            gh release create "${TAG}" \
+              aacert.tar.gz \
+              --title "aacert ${TAG}" \
+              --notes-file release-notes.md \
+              --verify-tag
+          fi
 
       - name: Purge jsDelivr CDN Cache
-        uses: gacts/purge-jsdelivr-cache@v1
-        with:
-          url: |
-            https://cdn.jsdelivr.net/gh/dyzulk/aacert@main/setup.sh
+        continue-on-error: true
+        env:
+          TAG: ${{ needs.generate-notes-and-package.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 .github/scripts/purge_jsdelivr_cache.py
