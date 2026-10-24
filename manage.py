@@ -16,8 +16,9 @@ import ssl
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 PANEL_ACME_V2 = "/www/server/panel/class/acme_v2.py"
-HOOK_TAG = "# [ACME_MANAGER_HOOK_START]"
-VERSION = "1.0.1"
+HOOK_TAG = "# [AACERT_HOOK_START]"
+LEGACY_HOOK_TAG = "# [ACME_MANAGER_HOOK_START]"
+VERSION = "1.0.2"
 
 
 def load_config():
@@ -39,7 +40,7 @@ def is_patch_installed():
     try:
         with open(PANEL_ACME_V2, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read()
-            return HOOK_TAG in content
+            return (HOOK_TAG in content) or (LEGACY_HOOK_TAG in content)
     except Exception:
         return False
 
