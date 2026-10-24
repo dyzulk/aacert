@@ -70,7 +70,29 @@ print("[✓] Safe micro-patch injected into acme_v2.py")
 EOF
 fi
 
-# 3. Test import inside aaPanel's python environment
+# 3. Create global symlink in /usr/local/bin
+if [ -d "/usr/local/bin" ]; then
+    ln -sf "${SCRIPT_DIR}/manage.py" "/usr/local/bin/aacert"
+    echo "[✓] Global command linked: /usr/local/bin/aacert"
+fi
+
+# 4. Register alias in ~/.bashrc and ~/.zshrc
+register_alias() {
+    local rc_file="$1"
+    if [ -f "$rc_file" ]; then
+        if ! grep -q "alias aacert=" "$rc_file"; then
+            echo "" >> "$rc_file"
+            echo "# aacert - Multi-CA ACME Manager for aaPanel" >> "$rc_file"
+            echo "alias aacert=\"python3 ${SCRIPT_DIR}/manage.py\"" >> "$rc_file"
+            echo "[✓] Alias 'aacert' added to ${rc_file}"
+        fi
+    fi
+}
+
+register_alias "${HOME}/.bashrc"
+register_alias "${HOME}/.zshrc"
+
+# 5. Test import inside aaPanel's python environment
 if [ -f "/www/server/panel/pyenv/bin/python3" ]; then
     /www/server/panel/pyenv/bin/python3 -c "
 import sys

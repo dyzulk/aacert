@@ -11,10 +11,18 @@ BACKUP_FILE="${PANEL_CLASS_DIR}/acme_v2.py.bak_orig"
 
 echo "=== [aacert] Uninstalling aacert from aaPanel ==="
 
-# 1. Remove symlinks in class directory
+# 1. Remove symlinks in class directory and bin
 rm -f "${PANEL_CLASS_DIR}/acme_provider_hook.py"
 rm -f "${PANEL_CLASS_DIR}/eab_helper.py"
-echo "[✓] Symlinks removed from ${PANEL_CLASS_DIR}."
+rm -f "/usr/local/bin/aacert"
+echo "[✓] Symlinks removed from ${PANEL_CLASS_DIR} and /usr/local/bin."
+
+# Remove alias from .bashrc and .zshrc
+sed -i '/# aacert - Multi-CA ACME Manager for aaPanel/d' "${HOME}/.bashrc" 2>/dev/null || true
+sed -i '/alias aacert=/d' "${HOME}/.bashrc" 2>/dev/null || true
+sed -i '/# aacert - Multi-CA ACME Manager for aaPanel/d' "${HOME}/.zshrc" 2>/dev/null || true
+sed -i '/alias aacert=/d' "${HOME}/.zshrc" 2>/dev/null || true
+echo "[✓] Aliases removed from shell profiles."
 
 # 2. Revert acme_v2.py
 if [ -f "$BACKUP_FILE" ]; then
