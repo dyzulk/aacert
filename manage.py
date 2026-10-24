@@ -226,8 +226,27 @@ def cmd_uninstall(args):
     subprocess.run(["bash", script], check=True)
 
 
+class CustomArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        print(f"\n[\033[91mERROR\033[0m] {message}\n")
+        print("Available commands:")
+        print("  status       - Show active CA provider and status")
+        print("  setup        - Configure CA credentials (ZeroSSL, Google, SSL.com)")
+        print("  enable       - Activate custom CA provider")
+        print("  disable      - Revert aaPanel to native Let's Encrypt")
+        print("  set-ca       - Switch active CA provider")
+        print("  set-eab      - Update EAB KID and HMAC credentials")
+        print("  test         - Test ACME directory connectivity")
+        print("  install      - Install aaPanel hook patch")
+        print("  uninstall    - Remove hook patch from aaPanel")
+        print("  version      - Show version information")
+        print("  help         - Show complete help and usage examples\n")
+        print("Run 'aacert help' or 'aacert <command> --help' for details.\n")
+        sys.exit(2)
+
+
 def main():
-    parser = argparse.ArgumentParser(
+    parser = CustomArgumentParser(
         prog="aacert",
         description="aacert - Multi-CA ACME Manager for aaPanel",
         epilog="https://github.com/dyzulk/aacert"
