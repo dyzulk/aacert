@@ -7,8 +7,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![aaPanel](https://img.shields.io/badge/aaPanel-8.0.7%2B-20B2AA?style=for-the-badge&logo=gnubash&logoColor=white)](https://aapanel.com)
-[![Downloads](https://img.shields.io/github/downloads/dyzulk/aacert/total?style=for-the-badge&color=2ea44f)](https://github.com/dyzulk/aacert/releases)
-[![Release](https://img.shields.io/github/v/release/dyzulk/aacert?style=for-the-badge&color=0969da)](https://github.com/dyzulk/aacert/releases)
+[![Downloads](https://img.shields.io/github/downloads/dyzulk/aacert/total?style=for-the-badge&color=2ea44f&label=DOWNLOADS)](https://github.com/dyzulk/aacert/releases)
+[![Release](https://img.shields.io/github/v/tag/dyzulk/aacert?style=for-the-badge&color=0969da&label=RELEASE&sort=semver)](https://github.com/dyzulk/aacert/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0D1117?style=for-the-badge)](LICENSE)
 
 <br/>
