@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v1.0.0)"
+        required: true
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  generate-notes-and-package:
+    name: Generate Release Notes & Build Tarball
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.resolve_tag.outputs.tag }}
+    steps:
+      - name: Checkout Source Code & History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Release Tag
+        id: resolve_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate Release Notes via Gemini AI
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VERSION: ${{ steps.resolve_tag.outputs.tag }}
+          OUTPUT_PATH: release-notes.md
+          PROMPT_TEMPLATE: .github/prompts/release-notes-prompt.md
+        run: |
+          python3 .github/scripts/generate_release_notes.py "${VERSION}" "${OUTPUT_PATH}"
+
+      - name: Package Release Tarball (Respecting .gitattributes)
+        run: |
+          git archive --format=tar.gz --prefix=aacert/ -o aacert.tar.gz HEAD
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            release-notes.md
+            aacert.tar.gz
+          retention-days: 1
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: generate-notes-and-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Download Release Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+
+      - name: Create or Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.generate-notes-and-package.outputs.release_tag }}
+        run: |
+          gh release create "${TAG}" \
+            aacert.tar.gz \
+            --title "aacert ${TAG}" \
+            --notes-file release-notes.md \
+            --verify-tag || \
+          gh release create "${TAG}" \
+            aacert.tar.gz \
+            --title "aacert ${TAG}" \
+            --notes-file release-notes.md

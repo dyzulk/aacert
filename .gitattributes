@@ -1,0 +1,7 @@
+# .gitattributes
+# Exclude dev and documentation files when exporting release archives / tarballs
+.gitattributes export-ignore
+.gitignore export-ignore
+.github export-ignore
+*.md export-ignore
+LICENSE export-ignore

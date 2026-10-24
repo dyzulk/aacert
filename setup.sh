@@ -6,7 +6,7 @@
 # ====================================================================
 set -e
 
-REPO_URL="https://github.com/dyzulk/aacert.git"
+REPO_API="https://api.github.com/repos/dyzulk/aacert/releases/latest"
 INSTALL_DIR="${HOME}/.aacert"
 BIN_LINK="/usr/local/bin/aacert"
 
@@ -21,7 +21,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Check prerequisites
-for cmd in curl tar git python3; do
+for cmd in curl tar python3; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "[*] Installing prerequisite: $cmd..."
         if command -v apt-get &>/dev/null; then
@@ -39,25 +39,33 @@ if [ ! -d "/www/server/panel" ]; then
     exit 1
 fi
 
-echo "[*] Downloading aacert into ${INSTALL_DIR}..."
-
-# If directory exists, backup existing config.json if present
+# Backup existing config.json if present
 BACKUP_CFG=""
 if [ -f "${INSTALL_DIR}/config.json" ]; then
     BACKUP_CFG=$(mktemp)
     cp "${INSTALL_DIR}/config.json" "$BACKUP_CFG"
 fi
 
-# Clone or download repository
-if [ -d "${INSTALL_DIR}/.git" ]; then
-    echo "[*] Existing git repository found in ${INSTALL_DIR}. Pulling latest..."
-    git -C "${INSTALL_DIR}" pull --quiet
-else
-    rm -rf "${INSTALL_DIR}"
-    git clone --depth=1 "${REPO_URL}" "${INSTALL_DIR}" --quiet
+# Fetch latest release tarball URL from GitHub
+echo "[*] Resolving latest release from GitHub..."
+TARBALL_URL=$(curl -sSL "${REPO_API}" | grep -o 'https://github.com/dyzulk/aacert/releases/download/[^"]*/aacert\.tar\.gz' | head -n 1 || true)
+
+# Fallback URL if API rate limit or structure changes
+if [ -z "$TARBALL_URL" ]; then
+    TARBALL_URL="https://github.com/dyzulk/aacert/releases/latest/download/aacert.tar.gz"
 fi
 
-# Restore config if backed up
+echo "[*] Downloading release asset: ${TARBALL_URL}..."
+TMP_ARCHIVE=$(mktemp /tmp/aacert-XXXXXX.tar.gz)
+curl -f -sSL -L "${TARBALL_URL}" -o "${TMP_ARCHIVE}"
+
+# Clean existing installation directory and unpack
+rm -rf "${INSTALL_DIR}"
+mkdir -p "${INSTALL_DIR}"
+tar -xzf "${TMP_ARCHIVE}" --strip-components=1 -C "${INSTALL_DIR}"
+rm -f "${TMP_ARCHIVE}"
+
+# Restore configuration if backed up
 if [ -n "$BACKUP_CFG" ] && [ -f "$BACKUP_CFG" ]; then
     cp "$BACKUP_CFG" "${INSTALL_DIR}/config.json"
     rm -f "$BACKUP_CFG"
@@ -67,7 +75,7 @@ fi
 # Set executable permissions
 chmod +x "${INSTALL_DIR}/manage.py" "${INSTALL_DIR}/install.sh" "${INSTALL_DIR}/uninstall.sh"
 
-# Create /usr/local/bin symlink so aacert is globally available immediately
+# Create /usr/local/bin symlink
 if [ -d "/usr/local/bin" ]; then
     ln -sf "${INSTALL_DIR}/manage.py" "${BIN_LINK}"
     echo "[✓] Created global command: ${BIN_LINK}"
