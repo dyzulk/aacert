@@ -12,6 +12,7 @@ from aacert_core.cli import (
     handle_test,
     handle_install,
     handle_uninstall,
+    handle_doctor,
 )
 
 
@@ -34,6 +35,7 @@ def run_cli(argv=None) -> int:
         "test": handle_test,
         "install": handle_install,
         "uninstall": handle_uninstall,
+        "doctor": handle_doctor,
     }
 
     handler = dispatch.get(args.command)

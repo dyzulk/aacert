@@ -133,3 +133,51 @@ def handle_uninstall(args):
         print(f"[!] uninstall.sh not found at {script}")
         sys.exit(1)
     subprocess.run(["bash", script], check=True)
+
+
+def handle_doctor(args):
+    from aacert_core.storage.panel_state import audit_panel_state, cleanup_stale_orders
+    report = audit_panel_state()
+
+    print("=" * 60)
+    print("  aacert Doctor - aaPanel ACME Integrity Report")
+    print("=" * 60)
+
+    exists_label = f"[{GREEN}EXISTS{RESET}]" if report["exists"] else f"[{RED}NOT FOUND{RESET}]"
+    print(f" State File Path   : {report['file_path']}")
+    print(f" File Status       : {exists_label}")
+    if report["exists"]:
+        r_str = f"{GREEN}YES{RESET}" if report["readable"] else f"{RED}NO{RESET}"
+        w_str = f"{GREEN}YES{RESET}" if report["writable"] else f"{RED}NO{RESET}"
+        print(f" File Permissions  : Read={r_str}, Write={w_str}")
+
+    print("-" * 60)
+    print(" Registered CA Accounts:")
+    for ca_id, acc in report.get("accounts", {}).items():
+        if acc.get("key_present") and acc.get("kid"):
+            kid = acc.get("kid")
+            masked_kid = f"{kid[:35]}...{kid[-10:]}" if len(kid) > 50 else kid
+            print(f"  - {ca_id:<14} : [{GREEN}REGISTERED{RESET}] ({masked_kid})")
+        elif acc.get("key_present"):
+            print(f"  - {ca_id:<14} : [{YELLOW}KEY PRESENT, NO KID{RESET}]")
+        else:
+            print(f"  - {ca_id:<14} : [{RED}NOT REGISTERED{RESET}] (Will register on first issuance)")
+
+    print("-" * 60)
+    print(f" Order Status (Total: {report['total_orders']}):")
+    print(f"  - Completed/Valid: {len(report['valid_orders'])}")
+    print(f"  - Stale/Pending  : {len(report['pending_orders'])}")
+    for p in report["pending_orders"]:
+        print(f"      * Order ID {p['id'][:8]}... | Domains: {p['domains']}")
+
+    if getattr(args, "clean_pending", False):
+        if report["pending_orders"]:
+            removed, bpath = cleanup_stale_orders()
+            print("-" * 60)
+            print(f"[{GREEN}CLEANED{RESET}] Purged {removed} stale pending orders.")
+            print(f"Backup created at: {bpath}")
+        else:
+            print("-" * 60)
+            print(f"[{GREEN}OK{RESET}] No stale pending orders found to clean.")
+
+    print("=" * 60)

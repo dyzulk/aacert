@@ -74,6 +74,10 @@ def build_parser() -> argparse.ArgumentParser:
     # uninstall
     subparsers.add_parser("uninstall", help="Uninstall hook patch and revert aaPanel")
 
+    # doctor
+    p_doc = subparsers.add_parser("doctor", help="Audit aaPanel letsencrypt_v2.json state and integrity")
+    p_doc.add_argument("--clean-pending", action="store_true", help="Purge stale pending orders")
+
     # help
     subparsers.add_parser("help", help="Show help and examples")
 

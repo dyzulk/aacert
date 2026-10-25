@@ -12,6 +12,7 @@ from aacert_core.cli.commands import (
     handle_test,
     handle_install,
     handle_uninstall,
+    handle_doctor,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "handle_test",
     "handle_install",
     "handle_uninstall",
+    "handle_doctor",
 ]
