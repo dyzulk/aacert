@@ -14,6 +14,7 @@ echo "=== [aacert] Uninstalling aacert from aaPanel ==="
 # 1. Remove symlinks in class directory and bin
 rm -f "${PANEL_CLASS_DIR}/acme_provider_hook.py"
 rm -f "${PANEL_CLASS_DIR}/eab_helper.py"
+rm -rf "${PANEL_CLASS_DIR}/aacert_core"
 rm -f "/usr/local/bin/aacert"
 echo "[✓] Symlinks removed from ${PANEL_CLASS_DIR} and /usr/local/bin."
 

@@ -21,6 +21,7 @@ fi
 # 1. Symlink core hook modules into aaPanel class directory
 ln -sf "${SCRIPT_DIR}/acme_provider_hook.py" "${PANEL_CLASS_DIR}/acme_provider_hook.py"
 ln -sf "${SCRIPT_DIR}/eab_helper.py" "${PANEL_CLASS_DIR}/eab_helper.py"
+ln -sfn "${SCRIPT_DIR}/aacert_core" "${PANEL_CLASS_DIR}/aacert_core"
 echo "[✓] Hook modules linked to ${PANEL_CLASS_DIR}"
 
 # 2. Inject safe micro-patch into acme_v2.py if not already present
