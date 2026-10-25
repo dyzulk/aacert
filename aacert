@@ -21,16 +21,32 @@ LEGACY_HOOK_TAG = "# [ACME_MANAGER_HOOK_START]"
 VERSION = "1.0.2"
 
 
+def get_config_path():
+    user_home = os.path.expanduser("~")
+    candidates = [
+        os.path.join(user_home, ".aacert", "config.json"),
+        os.path.join(BASE_DIR, "config.json"),
+        "/root/aacert-dev/config.json",
+        "/root/.aacert/config.json",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return os.path.join(BASE_DIR, "config.json")
+
+
 def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        print(f"[!] Error: Configuration file not found at {CONFIG_FILE}")
+    cfg_path = get_config_path()
+    if not os.path.exists(cfg_path):
+        print(f"[!] Error: Configuration file not found at {cfg_path}")
         sys.exit(1)
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+    with open(cfg_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_config(cfg):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+    cfg_path = get_config_path()
+    with open(cfg_path, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2, ensure_ascii=False)
 
 

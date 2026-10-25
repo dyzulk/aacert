@@ -10,7 +10,8 @@ import sys
 import json
 import time
 
-HOOK_DIR = os.path.dirname(os.path.abspath(__file__))
+HOOK_FILE = os.path.realpath(__file__)
+HOOK_DIR = os.path.dirname(HOOK_FILE)
 if HOOK_DIR not in sys.path:
     sys.path.insert(0, HOOK_DIR)
 
@@ -28,13 +29,14 @@ except ImportError:
 
 
 def get_config():
-    """Load configuration from standard locations."""
+    """Load configuration from standard locations using realpath."""
     user_home = os.path.expanduser("~")
     locations = [
         os.path.join(user_home, ".aacert", "config.json"),
         os.path.join(HOOK_DIR, "config.json"),
-        "/www/server/panel/plugin/aacert/config.json",
-        "/root/.aacert/config.json"
+        "/root/aacert-dev/config.json",
+        "/root/.aacert/config.json",
+        "/www/server/panel/plugin/aacert/config.json"
     ]
     for loc in locations:
         if os.path.exists(loc):
@@ -69,16 +71,23 @@ def apply_hook(acme_obj):
             return
 
         pinfo = providers[active_ca]
-        custom_dir_url = pinfo.get("directory_url")
+        is_debug = getattr(acme_obj, "_debug", False)
+        custom_dir_url = pinfo.get("staging_url") if is_debug else pinfo.get("directory_url")
         if not custom_dir_url:
             return
 
         # 1. Override the ACME directory URL
         acme_obj._url = custom_dir_url
 
-        # 2. Namespace account and apis keys to prevent overriding Let's Encrypt
-        acme_obj._account_key = f"acme_account_key_{active_ca}"
-        acme_obj._apis = f"acme_apis_{active_ca}"
+        # 2. Namespace account and apis keys in aaPanel's config dictionary
+        # aaPanel indexes accounts and apis using self._mod_index[self._debug]
+        acme_obj._mod_index = {
+            True: f"{active_ca}_Staging",
+            False: f"{active_ca}_Production"
+        }
+
+        # Clear cached directory APIs on instance so aaPanel fetches fresh endpoints for this CA
+        acme_obj._apis = None
 
         # 3. Use provider email if configured
         ca_email = pinfo.get("email") or config.get("email")
@@ -94,23 +103,23 @@ def apply_hook(acme_obj):
                 original_register = getattr(acme_obj, "register", None)
 
                 def custom_register(email=None):
-                    reg_email = email or ca_email or acme_obj._email
+                    reg_email = email or ca_email or getattr(acme_obj, "_email", None)
                     if not reg_email:
                         reg_email = "admin@" + (acme_obj._domains[0] if getattr(acme_obj, '_domains', None) else "example.com")
                     acme_obj._email = reg_email
 
-                    acme_obj.get_apis()
-                    apis = getattr(acme_obj, "_acme_apis", {})
-                    new_account_url = apis.get("newAccount")
+                    apis = acme_obj.get_apis()
+                    new_account_url = apis.get("newAccount") if isinstance(apis, dict) else None
                     if not new_account_url:
                         if original_register:
                             return original_register(email)
-                        return False
+                        return None
 
+                    account_key = acme_obj.get_account_key()
                     eab_payload = build_eab_object(
                         kid=kid,
                         hmac_key=hmac_key,
-                        account_key=acme_obj.get_account_key(),
+                        account_key=account_key,
                         new_account_url=new_account_url
                     )
 
@@ -120,46 +129,51 @@ def apply_hook(acme_obj):
                         "externalAccountBinding": eab_payload
                     }
 
-                    res = acme_obj.request(new_account_url, payload)
+                    res = acme_obj.acme_request(new_account_url, payload)
                     if res.status_code in [200, 201]:
                         acme_obj._account = res.json()
-                        acme_obj._kid = res.headers.get("Location")
-                        return True
+                        account_kid = res.headers.get("Location")
+                        return account_kid
                     elif res.status_code == 200 and "already exists" in res.text.lower():
-                        return True
-                    else:
-                        if original_register:
-                            return original_register(email)
-                        return False
+                        return res.headers.get("Location")
+                    elif res.status_code == 409 or "already exists" in res.text.lower():
+                        # Account already exists; retrieve existing account URL
+                        ex_res = acme_obj.acme_request(new_account_url, {"onlyReturnExisting": True})
+                        if ex_res.status_code in [200, 201]:
+                            return ex_res.headers.get("Location")
+
+                    if original_register:
+                        return original_register(email)
+                    return None
 
                 acme_obj.register = custom_register
 
         # 5. Handle async order finalization for CAs like ZeroSSL and Google PKI
         original_send_csr = getattr(acme_obj, "send_csr", None)
         if original_send_csr:
-            def custom_send_csr(*args, **kwargs):
-                res = original_send_csr(*args, **kwargs)
+            def custom_send_csr(index, *args, **kwargs):
+                certificate_url = original_send_csr(index, *args, **kwargs)
                 try:
-                    order = getattr(acme_obj, "_order", {})
-                    cert_url = order.get("certificate")
-                    status = order.get("status")
-                    order_url = getattr(acme_obj, "_order_url", None)
-
-                    # Poll until certificate is ready if status is 'processing'
-                    if (not cert_url or status == "processing") and order_url:
+                    # If certificate wasn't immediately returned, check if finalize order is processing
+                    order_info = getattr(acme_obj, "_config", {}).get('orders', {}).get(index, {})
+                    order_finalize_url = order_info.get('finalize')
+                    if not certificate_url and order_finalize_url:
+                        order_url = order_finalize_url.rsplit('/finalize', 1)[0]
                         for _ in range(15):
                             time.sleep(3)
-                            chk = acme_obj.request(order_url, "")
+                            chk = acme_obj.acme_request(order_url, "")
                             if chk.status_code == 200:
                                 updated_order = chk.json()
-                                acme_obj._order = updated_order
                                 if updated_order.get("certificate"):
-                                    break
+                                    cert_url = updated_order.get("certificate")
+                                    acme_obj._config['orders'][index]['certificate_url'] = cert_url
+                                    acme_obj.save_config()
+                                    return cert_url
                                 if updated_order.get("status") == "invalid":
                                     break
                 except Exception:
                     pass
-                return res
+                return certificate_url
 
             acme_obj.send_csr = custom_send_csr
 
