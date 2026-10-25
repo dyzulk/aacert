@@ -71,8 +71,9 @@ EOF
 fi
 
 # 3. Create global symlink in /usr/local/bin
+chmod +x "${SCRIPT_DIR}/aacert"
 if [ -d "/usr/local/bin" ]; then
-    ln -sf "${SCRIPT_DIR}/manage.py" "/usr/local/bin/aacert"
+    ln -sf "${SCRIPT_DIR}/aacert" "/usr/local/bin/aacert"
     echo "[✓] Global command linked: /usr/local/bin/aacert"
 fi
 
@@ -115,7 +116,7 @@ detect_and_register_alias() {
         if ! grep -q "alias aacert=" "$target_rc"; then
             echo "" >> "$target_rc"
             echo "# aacert - Multi-CA ACME Manager for aaPanel" >> "$target_rc"
-            echo "alias aacert=\"python3 ${SCRIPT_DIR}/manage.py\"" >> "$target_rc"
+            echo "alias aacert=\"${SCRIPT_DIR}/aacert\"" >> "$target_rc"
             echo "[✓] Detected shell '$current_shell': registered alias in ${target_rc}"
         else
             echo "[✓] Alias already configured in ${target_rc}"

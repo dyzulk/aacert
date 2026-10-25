@@ -69,11 +69,11 @@ if [ -n "$BACKUP_CFG" ] && [ -f "$BACKUP_CFG" ]; then
 fi
 
 # Set executable permissions
-chmod +x "${INSTALL_DIR}/manage.py" "${INSTALL_DIR}/install.sh" "${INSTALL_DIR}/uninstall.sh"
+chmod +x "${INSTALL_DIR}/aacert" "${INSTALL_DIR}/install.sh" "${INSTALL_DIR}/uninstall.sh"
 
 # Create /usr/local/bin symlink
 if [ -d "/usr/local/bin" ]; then
-    ln -sf "${INSTALL_DIR}/manage.py" "${BIN_LINK}"
+    ln -sf "${INSTALL_DIR}/aacert" "${BIN_LINK}"
     echo "[✓] Created global command: ${BIN_LINK}"
 fi
 
@@ -114,7 +114,7 @@ detect_and_register_alias() {
         if ! grep -q "alias aacert=" "$target_rc"; then
             echo "" >> "$target_rc"
             echo "# aacert - Multi-CA ACME Manager for aaPanel" >> "$target_rc"
-            echo "alias aacert=\"python3 ${INSTALL_DIR}/manage.py\"" >> "$target_rc"
+            echo "alias aacert=\"${INSTALL_DIR}/aacert\"" >> "$target_rc"
             echo "[✓] Detected shell '$current_shell': registered alias in ${target_rc}"
         else
             echo "[✓] Alias already configured in ${target_rc}"
