@@ -5,17 +5,26 @@
 **Multi-CA ACME Manager for aaPanel**  
 *Seamlessly issue & automate certificates from ZeroSSL, Google Public CA, SSL.com, and Let's Encrypt.*
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![aaPanel](https://img.shields.io/badge/aaPanel-8.0.7%2B-20B2AA?style=for-the-badge&logo=gnubash&logoColor=white)](https://aapanel.com)
+[![Stars](https://img.shields.io/github/stars/dyzulk/aacert?style=for-the-badge&logo=github&label=STARS&color=yellow)](https://github.com/dyzulk/aacert/stargazers)
 [![Downloads](https://img.shields.io/github/downloads/dyzulk/aacert/total?style=for-the-badge&color=2ea44f&label=DOWNLOADS)](https://github.com/dyzulk/aacert/releases)
 [![Release](https://img.shields.io/github/v/tag/dyzulk/aacert?style=for-the-badge&color=0969da&label=RELEASE&sort=semver)](https://github.com/dyzulk/aacert/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0D1117?style=for-the-badge)](LICENSE)
 
 <br/>
 
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![aaPanel](https://img.shields.io/badge/aaPanel-8.0.7%2B-20B2AA?style=for-the-badge&logo=gnubash&logoColor=white)](https://aapanel.com)
+
+<br/>
+
 <a href="https://skillicons.dev">
   <img src="https://skillicons.dev/icons?i=python,bash,linux,github&theme=dark" alt="Supported Tech Stack" />
 </a>
+
+<br/>
+<br/>
+
+<p>If aacert is useful to you, please consider <a href="https://github.com/dyzulk/aacert/stargazers">giving it a star ⭐</a> — it helps others discover the project.</p>
 
 <br/>
 <br/>
