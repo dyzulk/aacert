@@ -1,7 +1,29 @@
 # .gitattributes
-# Exclude dev and documentation files when exporting release archives / tarballs
+# Exclude dev, test, and documentation files when exporting release archives / tarballs
 .gitattributes export-ignore
 .gitignore export-ignore
 .github export-ignore
+.github/** export-ignore
+.vscode export-ignore
+.vscode/** export-ignore
+.idea export-ignore
+.idea/** export-ignore
+
+# Tests and dev tools
+tests export-ignore
+tests/** export-ignore
+link export-ignore
+link/** export-ignore
+tmp export-ignore
+tmp/** export-ignore
+
+# Documentation
 *.md export-ignore
 LICENSE export-ignore
+
+# Python bytecode caches
+__pycache__ export-ignore
+__pycache__/** export-ignore
+**/.pytest_cache/** export-ignore
+*.pyc export-ignore
+*.pyo export-ignore
