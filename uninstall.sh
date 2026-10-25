@@ -6,17 +6,19 @@
 set -e
 
 PANEL_CLASS_DIR="/www/server/panel/class"
+PANEL_PLUGIN_DIR="/www/server/panel/plugin"
 TARGET_FILE="${PANEL_CLASS_DIR}/acme_v2.py"
 BACKUP_FILE="${PANEL_CLASS_DIR}/acme_v2.py.bak_orig"
 
 echo "=== [aacert] Uninstalling aacert from aaPanel ==="
 
-# 1. Remove symlinks in class directory and bin
+# 1. Remove isolated plugin symlink, residual files, and global binary
+rm -rf "${PANEL_PLUGIN_DIR}/aacert"
 rm -f "${PANEL_CLASS_DIR}/acme_provider_hook.py"
 rm -f "${PANEL_CLASS_DIR}/eab_helper.py"
 rm -rf "${PANEL_CLASS_DIR}/aacert_core"
 rm -f "/usr/local/bin/aacert"
-echo "[✓] Symlinks removed from ${PANEL_CLASS_DIR} and /usr/local/bin."
+echo "[✓] Removed ${PANEL_PLUGIN_DIR}/aacert and /usr/local/bin/aacert."
 
 # Remove alias from any shell profile files
 for rc in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.bash_profile" "${HOME}/.profile"; do
