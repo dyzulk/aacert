@@ -132,5 +132,21 @@ def apply_acme_hook(acme_obj) -> None:
 
             acme_obj.send_csr = custom_send_csr
 
+        # 6. Intercept get_error to bypass aaPanel's string.find() truthy bug
+        original_get_error = getattr(acme_obj, "get_error", None)
+        if original_get_error:
+            def custom_get_error(error):
+                err_str = str(error)
+                ret = original_get_error(error)
+                # aaPanel line 1192 has 'elif error.find("too many failed authorizations recently"):' without '!= -1'.
+                # In Python, string.find() returns -1 on non-match, which evaluates to True.
+                # If the returned message claims rate limit but the error doesn't contain that substring, return real error.
+                if "more than 5 failed orders within 1 hour" in str(ret).lower() and \
+                   "too many failed authorizations recently" not in err_str:
+                    return err_str
+                return ret
+
+            acme_obj.get_error = custom_get_error
+
     except Exception:
         pass
