@@ -1,6 +1,9 @@
 name: Bug report
 description: Report a reproducible defect in aacert.
 title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
 body:
   - type: markdown
     attributes:

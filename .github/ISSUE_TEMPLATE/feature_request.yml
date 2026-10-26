@@ -1,6 +1,9 @@
 name: Feature request
 description: Propose a specific improvement to aacert.
 title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
 body:
   - type: markdown
     attributes:
