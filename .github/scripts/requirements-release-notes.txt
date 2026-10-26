@@ -1,2 +1,2 @@
 google-genai==2.33.0
-groq==0.31.0
+groq==1.7.0
