@@ -12,7 +12,7 @@
 
 <br/>
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![aaPanel](https://img.shields.io/badge/aaPanel-8.0.7%2B-20B2AA?style=for-the-badge&logo=gnubash&logoColor=white)](https://aapanel.com)
 
 <br/>

@@ -10,7 +10,7 @@ sys.path.insert(0, str(SCRIPTS_PATH))
 
 from generate_release_notes.formatting import get_commit_subjects
 from generate_release_notes.generator import generate_local_fallback_notes, generate_summary
-from generate_release_notes.providers import call_groq_api
+from generate_release_notes.providers import call_gemini_api, call_groq_api
 from test_release_notes import parse_env_file
 
 
@@ -48,6 +48,24 @@ class TestReleaseNotes(unittest.TestCase):
             "GEMINI_API_KEY": "gemini-value",
             "GROQ_API_KEY": "groq-value",
         })
+
+    @patch("generate_release_notes.providers.get_gemini_client")
+    def test_gemini_api_uses_official_sdk(self, get_gemini_client):
+        response = Mock(text="Gemini release summary")
+        client = Mock()
+        client.models.generate_content.return_value = response
+        get_gemini_client.return_value = client
+
+        result = call_gemini_api("prompt text", "gemini-secret")
+
+        self.assertEqual(result, "Gemini release summary")
+        get_gemini_client.assert_called_once_with("gemini-secret")
+        client.models.generate_content.assert_called_once_with(
+            model="gemini-flash-latest",
+            contents="prompt text",
+            config={"temperature": 0.2, "max_output_tokens": 2048},
+        )
+        client.close.assert_called_once_with()
 
     @patch("generate_release_notes.providers.get_groq_client")
     def test_groq_api_uses_official_sdk(self, get_groq_client):
