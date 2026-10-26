@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  discussions: write
 
 jobs:
   generate-notes-and-package:
@@ -84,17 +85,72 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.generate-notes-and-package.outputs.release_tag }}
         run: |
+          PRERELEASE_FLAG=()
+          if [[ "${TAG}" == *-* ]]; then
+            PRERELEASE_FLAG=(--prerelease)
+          fi
+
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" aacert.tar.gz --clobber
             gh release edit "${TAG}" \
               --title "aacert ${TAG}" \
-              --notes-file release-notes.md
+              --notes-file release-notes.md \
+              "${PRERELEASE_FLAG[@]}"
           else
             gh release create "${TAG}" \
               aacert.tar.gz \
               --title "aacert ${TAG}" \
               --notes-file release-notes.md \
-              --verify-tag
+              --verify-tag \
+              "${PRERELEASE_FLAG[@]}"
+          fi
+
+      - name: Create or Update Release Announcement
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.generate-notes-and-package.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          OWNER="${REPOSITORY%%/*}"
+          REPO="${REPOSITORY#*/}"
+          TITLE="aacert ${TAG}"
+
+          REPOSITORY_DATA=$(gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { id discussionCategories(first: 50) { nodes { id name } } } }' \
+            -F owner="${OWNER}" \
+            -F name="${REPO}")
+
+          REPOSITORY_ID=$(printf '%s' "${REPOSITORY_DATA}" | jq -r '.data.repository.id')
+          CATEGORY_ID=$(printf '%s' "${REPOSITORY_DATA}" | jq -r '.data.repository.discussionCategories.nodes[] | select(.name == "Announcements") | .id')
+
+          if [ -z "${REPOSITORY_ID}" ] || [ -z "${CATEGORY_ID}" ]; then
+            echo "Could not find the repository or its Announcements discussion category." >&2
+            exit 1
+          fi
+
+          DISCUSSIONS=$(gh api graphql \
+            -f query='query($owner: String!, $name: String!, $categoryId: ID!) { repository(owner: $owner, name: $name) { discussions(first: 100, categoryId: $categoryId) { nodes { id title } } } }' \
+            -F owner="${OWNER}" \
+            -F name="${REPO}" \
+            -F categoryId="${CATEGORY_ID}")
+
+          DISCUSSION_ID=$(printf '%s' "${DISCUSSIONS}" | jq -r --arg title "${TITLE}" '.data.repository.discussions.nodes[] | select(.title == $title) | .id' | head -n 1)
+
+          if [ -n "${DISCUSSION_ID}" ]; then
+            gh api graphql \
+              -f query='mutation($discussionId: ID!, $title: String!, $body: String!) { updateDiscussion(input: {discussionId: $discussionId, title: $title, body: $body}) { discussion { url } } }' \
+              -F discussionId="${DISCUSSION_ID}" \
+              -F title="${TITLE}" \
+              -F body=@release-notes.md \
+              --jq '.data.updateDiscussion.discussion.url'
+          else
+            gh api graphql \
+              -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) { discussion { url } } }' \
+              -F repositoryId="${REPOSITORY_ID}" \
+              -F categoryId="${CATEGORY_ID}" \
+              -F title="${TITLE}" \
+              -F body=@release-notes.md \
+              --jq '.data.createDiscussion.discussion.url'
           fi
 
       - name: Purge jsDelivr CDN Cache
