@@ -6,20 +6,10 @@ from aacert_core import __version__
 class AacertArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         import sys
+
         print(f"\n[\033[91mERROR\033[0m] {message}\n")
-        print("Available commands:")
-        print("  status       - Show active CA provider and status")
-        print("  setup        - Configure CA credentials (ZeroSSL, Google, SSL.com)")
-        print("  enable       - Activate custom CA provider")
-        print("  disable      - Revert aaPanel to native Let's Encrypt")
-        print("  set-ca       - Switch active CA provider")
-        print("  set-eab      - Update EAB KID and HMAC credentials")
-        print("  test         - Test ACME directory connectivity")
-        print("  install      - Install aaPanel hook patch")
-        print("  uninstall    - Remove hook patch from aaPanel")
-        print("  version      - Show version information")
-        print("  help         - Show complete help and usage examples\n")
-        print("Run 'aacert help' or 'aacert <command> --help' for details.")
+        self.print_usage()
+        print(f"Run '{self.prog} --help' for command usage and arguments.")
         sys.exit(2)
 
 

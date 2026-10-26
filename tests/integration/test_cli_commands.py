@@ -53,6 +53,25 @@ class TestCLICommands(unittest.TestCase):
                         self.assertEqual(exit_info.exception.code, 0)
                 self.assertIn("usage: aacert", buf.getvalue())
 
+    def test_invalid_command_arguments_show_targeted_usage(self):
+        cases = (
+            (["set-ca"], "usage: aacert set-ca", "Run 'aacert set-ca --help'"),
+            (["setup"], "usage: aacert setup", "Run 'aacert setup --help'"),
+        )
+        for argv, usage, suggestion in cases:
+            with self.subTest(argv=argv):
+                buf = io.StringIO()
+                with patch("sys.stdout", buf):
+                    with self.assertRaises(SystemExit) as exit_info:
+                        run_cli(argv)
+
+                self.assertEqual(exit_info.exception.code, 2)
+                output = buf.getvalue()
+                self.assertIn("ERROR", output)
+                self.assertIn(usage, output)
+                self.assertIn(suggestion, output)
+                self.assertNotIn("Available commands:", output)
+
     def test_cli_status_and_ca_switch(self):
         with temp_config_dir() as (td, cfg_file):
             with patch("aacert_core.storage.config_store.get_config_path", return_value=cfg_file):
