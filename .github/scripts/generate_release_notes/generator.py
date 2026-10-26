@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Callable, Optional
 
 from .formatting import (
     format_full_changelog,
@@ -44,6 +45,7 @@ def generate_summary(
     prompt_template_path: str,
     gemini_api_key: str,
     groq_api_key: str,
+    on_provider_success: Optional[Callable[[str], None]] = None,
 ) -> str:
     providers = []
     if gemini_api_key:
@@ -62,11 +64,15 @@ def generate_summary(
             for provider_name, generate, api_key in providers:
                 try:
                     print(f"[release-notes] Generating release notes with {provider_name}...")
-                    return generate(prompt, api_key)
+                    summary = generate(prompt, api_key)
+                    if on_provider_success is not None:
+                        on_provider_success(provider_name.lower())
+                    return summary
                 except Exception as error:
+                    message = str(error).replace(api_key, "[REDACTED]")
                     print(
                         f"[release-notes] {provider_name} generation failed: "
-                        f"{error}"
+                        f"{message}"
                     )
 
     print("[release-notes] Using local commit-based fallback.")
@@ -79,6 +85,7 @@ def generate_release_notes(
     prompt_template_path: str,
     gemini_api_key: str,
     groq_api_key: str,
+    on_provider_success: Optional[Callable[[str], None]] = None,
 ) -> str:
     repo_url = get_repo_url()
     print(f"[release-notes] Target Version: {version}")
@@ -99,6 +106,7 @@ def generate_release_notes(
         prompt_template_path,
         gemini_api_key,
         groq_api_key,
+        on_provider_success,
     )
     final_notes = (
         f"{sanitize_no_emoji(summary)}\n\n## Full Changelog\n\n"

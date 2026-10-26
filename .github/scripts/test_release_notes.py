@@ -7,8 +7,6 @@ Examples:
 """
 
 import argparse
-import contextlib
-import io
 import os
 from pathlib import Path
 
@@ -22,12 +20,6 @@ OUTPUT_NAMES = {
     "groq": "output-groq.md",
     "none": "output-no-ai.md",
 }
-SUCCESS_MESSAGES = {
-    "gemini": "Successfully generated release notes with ",
-    "groq": "Successfully generated release notes with Groq.",
-}
-
-
 def parse_env_file(env_file: Path) -> dict:
     values = {}
     if not env_file.is_file():
@@ -67,23 +59,20 @@ def run_scenario(
     output_path = output_dir / OUTPUT_NAMES[provider]
     selected_gemini_key = gemini_api_key if provider == "gemini" else ""
     selected_groq_key = groq_api_key if provider == "groq" else ""
-    captured_output = io.StringIO()
+    generated_by = []
 
-    with contextlib.redirect_stdout(captured_output):
-        generate_release_notes(
-            version,
-            str(output_path),
-            prompt_template,
-            selected_gemini_key,
-            selected_groq_key,
-        )
+    def record_provider(provider_name: str):
+        generated_by.append(provider_name.lower())
 
-    log = captured_output.getvalue()
-    for secret in (gemini_api_key, groq_api_key):
-        if secret:
-            log = log.replace(secret, "[REDACTED]")
-    print(f"=== {provider} ===")
-    print(log, end="" if log.endswith("\n") else "\n")
+    print(f"=== {provider} ===", flush=True)
+    generate_release_notes(
+        version,
+        str(output_path),
+        prompt_template,
+        selected_gemini_key,
+        selected_groq_key,
+        on_provider_success=record_provider,
+    )
 
     if not output_path.is_file() or not output_path.read_text(
         encoding="utf-8"
@@ -91,7 +80,7 @@ def run_scenario(
         print(f"[release-notes-test] No output was written to {output_path}")
         return False
 
-    if provider in SUCCESS_MESSAGES and SUCCESS_MESSAGES[provider] not in log:
+    if provider != "none" and provider not in generated_by:
         print(
             f"[release-notes-test] {provider} did not generate the notes; "
             "the generator may have used its local fallback."
@@ -182,11 +171,7 @@ def main():
                 groq_api_key,
             )
         except Exception as error:
-            message = str(error)
-            for secret in (gemini_api_key, groq_api_key):
-                if secret:
-                    message = message.replace(secret, "[REDACTED]")
-            print(f"[release-notes-test] {provider} test errored: {message}")
+            print(f"[release-notes-test] {provider} test errored: {error}")
             succeeded = False
         if not succeeded:
             failures.append(provider)

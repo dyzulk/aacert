@@ -33,6 +33,31 @@ class TestReleaseNotes(unittest.TestCase):
         self.assertIn("- Update release workflow", notes)
         self.assertNotIn("Seamless multi-provider ACME support", notes)
 
+    @patch("generate_release_notes.generator.build_prompt", return_value="prompt")
+    @patch(
+        "generate_release_notes.generator.call_gemini_api",
+        return_value="Gemini summary",
+    )
+    def test_generate_summary_reports_successful_provider(
+        self, gemini, build_prompt
+    ):
+        successful_providers = []
+
+        summary = generate_summary(
+            "v1.2.3",
+            "v1.2.2",
+            "abc123|Fix DNS challenge retry|Ada",
+            "unused-template.md",
+            "gemini-key",
+            "",
+            on_provider_success=successful_providers.append,
+        )
+
+        self.assertEqual(summary, "Gemini summary")
+        self.assertEqual(successful_providers, ["gemini"])
+        gemini.assert_called_once_with("prompt", "gemini-key")
+        build_prompt.assert_called_once()
+
     def test_commit_subject_extraction_removes_emoji(self):
         subjects = get_commit_subjects("abc123|Fix renewal flow 🚀|Ada")
 

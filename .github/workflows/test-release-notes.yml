@@ -42,6 +42,7 @@ jobs:
 
       - name: Generate selected release-note outputs
         env:
+          PYTHONUNBUFFERED: "1"
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           PROVIDER: ${{ inputs.provider }}

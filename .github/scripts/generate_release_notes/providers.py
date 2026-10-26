@@ -31,6 +31,10 @@ def get_gemini_client(api_key: str):
     )
 
 
+def redact_api_key(message: str, api_key: str) -> str:
+    return message.replace(api_key, "[REDACTED]") if api_key else message
+
+
 def call_gemini_api(prompt: str, api_key: str) -> str:
     last_error = None
     client = get_gemini_client(api_key)
@@ -63,7 +67,7 @@ def call_gemini_api(prompt: str, api_key: str) -> str:
                 except Exception as error:
                     print(
                         f"[release-notes] Gemini {model} attempt {attempt} "
-                        f"error: {error}"
+                        f"error: {redact_api_key(str(error), api_key)}"
                     )
                     last_error = error
 
