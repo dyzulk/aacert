@@ -3,6 +3,16 @@ import time
 from .formatting import sanitize_no_emoji
 
 
+GEMINI_CANDIDATE_MODELS = (
+    "gemini-flash-latest",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+)
+GEMINI_MAX_ATTEMPTS_PER_MODEL = 2
+
+
 def get_gemini_client(api_key: str):
     try:
         from google import genai
@@ -12,28 +22,26 @@ def get_gemini_client(api_key: str):
             ".github/scripts/requirements-release-notes.txt"
         ) from error
 
-    return genai.Client(api_key=api_key, http_options={"timeout": 30000})
+    return genai.Client(
+        api_key=api_key,
+        http_options={
+            "timeout": 30000,
+            "retry_options": {"attempts": 1},
+        },
+    )
 
 
 def call_gemini_api(prompt: str, api_key: str) -> str:
-    candidate_models = [
-        "gemini-flash-latest",
-        "gemini-3.8-flash",
-        "gemini-3.7-flash",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-    ]
-    max_retries = 3
     last_error = None
     client = get_gemini_client(api_key)
 
     try:
-        for model in candidate_models:
-            for attempt in range(1, max_retries + 1):
+        for model in GEMINI_CANDIDATE_MODELS:
+            for attempt in range(1, GEMINI_MAX_ATTEMPTS_PER_MODEL + 1):
                 try:
                     print(
                         f"[release-notes] Querying Gemini model {model} "
-                        f"(attempt {attempt}/{max_retries})..."
+                        f"(attempt {attempt}/{GEMINI_MAX_ATTEMPTS_PER_MODEL})..."
                     )
                     response = client.models.generate_content(
                         model=model,
@@ -58,11 +66,68 @@ def call_gemini_api(prompt: str, api_key: str) -> str:
                         f"error: {error}"
                     )
                     last_error = error
+
                     status_code = getattr(error, "code", None)
-                    if status_code in (400, 404):
+                    message = str(error).lower()
+                    if status_code == 429 or "resource_exhausted" in message:
+                        print(
+                            "[release-notes] Gemini quota/rate limit reached; "
+                            "skipping remaining Gemini models."
+                        )
+                        raise
+
+                    model_unavailable = status_code == 404 or any(
+                        marker in message
+                        for marker in (
+                            "model not found",
+                            "model is not found",
+                            "model is no longer available",
+                            "model is not supported",
+                        )
+                    )
+                    if model_unavailable:
+                        print(
+                            f"[release-notes] Skipping unavailable Gemini "
+                            f"model {model}."
+                        )
                         break
-                    if attempt < max_retries:
-                        time.sleep(attempt)
+
+                    if status_code == 400:
+                        print(
+                            "[release-notes] Gemini rejected the request; "
+                            "skipping remaining Gemini models."
+                        )
+                        raise
+
+                    if status_code in (408, 500, 502, 503, 504) or any(
+                        marker in type(error).__name__.lower()
+                        for marker in ("timeout", "connection")
+                    ):
+                        if attempt < GEMINI_MAX_ATTEMPTS_PER_MODEL:
+                            print(
+                                f"[release-notes] Retrying transient Gemini "
+                                f"error for {model} once."
+                            )
+                            time.sleep(attempt)
+                            continue
+                        print(
+                            f"[release-notes] Skipping {model} after "
+                            f"{GEMINI_MAX_ATTEMPTS_PER_MODEL} attempts."
+                        )
+                        break
+
+                    if status_code in (401, 403):
+                        print(
+                            "[release-notes] Gemini authentication or access "
+                            "was rejected; skipping remaining Gemini models."
+                        )
+                        raise
+
+                    print(
+                        f"[release-notes] Non-retryable Gemini error for "
+                        f"{model}; moving to the next provider model."
+                    )
+                    break
     finally:
         client.close()
 
