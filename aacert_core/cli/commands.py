@@ -10,6 +10,19 @@ from aacert_core.cli.ui import print_status, GREEN, RED, YELLOW, CYAN, RESET
 from aacert_core.storage.config_store import SOURCE_ROOT
 
 
+def _print_ssl_com_note(ca_id):
+    if ca_id.strip().lower() == "ssl_com":
+        print(
+            f"[{YELLOW}NOTE{RESET}] SSL.com does not require EAB, but may require "
+            "you to activate your SSL.com web account and complete its billing "
+            "profile before ACME account registration or issuance."
+        )
+        print(
+            "       This does not mean the certificate is free: confirm the "
+            "selected SSL.com product/order is Free DV ($0) in its portal."
+        )
+
+
 def handle_version(args):
     print(f"aacert v{__version__}")
     print("Multi-CA ACME Manager for aaPanel")
@@ -34,6 +47,7 @@ def handle_setup(args):
         profile = status_info.get("profile")
         ca_name = profile.name if profile else args.ca
         print(f"[{GREEN}OK{RESET}] Provider '{ca_name}' successfully configured.")
+        _print_ssl_com_note(args.ca)
         if status_info.get("enabled"):
             print(f"[{GREEN}OK{RESET}] aacert is now ENABLED.")
         else:
@@ -64,6 +78,7 @@ def handle_set_ca(args):
         profile = res.get("profile")
         ca_name = profile.name if profile else args.ca_name
         print(f"[{GREEN}OK{RESET}] Active CA changed to: {CYAN}{ca_name}{RESET} ({args.ca_name})")
+        _print_ssl_com_note(args.ca_name)
         if profile and profile.eab_required:
             kid = (profile.eab_kid or "").strip()
             hmac_k = (profile.eab_hmac_key or "").strip()

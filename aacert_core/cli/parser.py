@@ -40,7 +40,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     # setup
     p_setup = subparsers.add_parser("setup", help="Configure provider credentials")
-    p_setup.add_argument("--ca", required=True, help="Provider ID (zerossl, google, ssl_com, letsencrypt)")
+    p_setup.add_argument(
+        "--ca",
+        required=True,
+        help=(
+            "Provider ID (zerossl, google, ssl_com, letsencrypt). "
+            "For ssl_com, EAB is not required; SSL.com may require web-account "
+            "activation and a billing profile."
+        ),
+    )
     p_setup.add_argument("--email", help="Account registration email")
     p_setup.add_argument("--kid", help="EAB Key Identifier (KID)")
     p_setup.add_argument("--hmac", help="EAB HMAC Key")
@@ -55,7 +63,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     # set-ca
     p_setca = subparsers.add_parser("set-ca", help="Switch active CA provider")
-    p_setca.add_argument("ca_name", help="Provider ID (letsencrypt, zerossl, google, ssl_com)")
+    p_setca.add_argument(
+        "ca_name",
+        help=(
+            "Provider ID (letsencrypt, zerossl, google, ssl_com). "
+            "SSL.com does not require EAB, but may require web-account activation "
+            "and a billing profile."
+        ),
+    )
 
     # set-eab
     p_seteab = subparsers.add_parser("set-eab", help="Set EAB KID and HMAC key")

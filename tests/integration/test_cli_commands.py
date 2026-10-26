@@ -72,6 +72,45 @@ class TestCLICommands(unittest.TestCase):
                 self.assertIn(suggestion, output)
                 self.assertNotIn("Available commands:", output)
 
+    def test_ssl_com_setup_explains_account_and_pricing_requirements(self):
+        config = {
+            "enabled": False,
+            "active_ca": "letsencrypt",
+            "email": "",
+            "providers": {
+                "letsencrypt": {
+                    "name": "Let's Encrypt",
+                    "directory_url": "https://acme-v02.api.letsencrypt.org/directory",
+                    "staging_url": "https://acme-staging-v02.api.letsencrypt.org/directory",
+                    "eab_required": False,
+                    "cert_days": 90,
+                },
+                "ssl_com": {
+                    "name": "SSL.com",
+                    "directory_url": "https://acme.ssl.com/sslcom-dv-rsa",
+                    "staging_url": "https://acme-try.ssl.com/sslcom-dv-rsa",
+                    "eab_required": False,
+                    "cert_days": 90,
+                },
+            },
+        }
+        with temp_config_dir(initial_cfg=config) as (td, cfg_file):
+            with patch("aacert_core.storage.config_store.get_config_path", return_value=cfg_file):
+                output = io.StringIO()
+                with patch("sys.stdout", output):
+                    code = run_cli([
+                        "setup",
+                        "--ca",
+                        "ssl_com",
+                        "--email",
+                        "acme@example.com",
+                    ])
+
+        self.assertEqual(code, 0)
+        self.assertIn("does not require EAB", output.getvalue())
+        self.assertIn("activate your SSL.com web account", output.getvalue())
+        self.assertIn("confirm the selected SSL.com product/order is Free DV ($0)", output.getvalue())
+
     def test_unknown_ca_provider_lists_available_providers(self):
         with temp_config_dir() as (td, cfg_file):
             with patch("aacert_core.storage.config_store.get_config_path", return_value=cfg_file):

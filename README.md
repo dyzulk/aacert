@@ -116,6 +116,22 @@ aacert setup --ca google \
 ```
 
 #### SSL.com
+SSL.com's ACME directory does not require EAB. However, SSL.com may require you to
+activate your web account and complete a billing profile before ACME account
+registration or certificate issuance. Follow the instructions sent to your
+account email and check the billing profile in the [SSL.com portal](https://secure.ssl.com/).
+
+The portal may also show an option to enable a free Digital Identity for
+document signing and email. This is generally separate from TLS DV domain
+validation and is not normally needed to request a website certificate with
+ACME. Follow any account-specific requirements SSL.com displays if issuance is
+still blocked.
+
+SSL.com offers a Free DV certificate, but selecting `ssl_com` here does not by
+itself guarantee a $0 order. Before issuance, confirm that the selected product
+in the SSL.com portal is Free DV and shows a $0 price. The `ssl_com` provider ID
+is the accepted spelling (not `ssl.com`).
+
 ```bash
 aacert setup --ca ssl_com --email your-email@example.com --enable
 ```
