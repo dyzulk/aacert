@@ -139,10 +139,12 @@ def parse_args():
 
 def main():
     args = parse_args()
-    try:
-        file_values = parse_env_file(args.env_file)
-    except (OSError, ValueError) as error:
-        raise SystemExit(f"[release-notes-test] {error}") from error
+    file_values = {}
+    if args.env_file.is_file():
+        try:
+            file_values = parse_env_file(args.env_file)
+        except (OSError, ValueError) as error:
+            raise SystemExit(f"[release-notes-test] {error}") from error
 
     gemini_api_key = os.environ.get(
         "GEMINI_API_KEY", file_values.get("GEMINI_API_KEY", "")
