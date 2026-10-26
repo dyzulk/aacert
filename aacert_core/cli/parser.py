@@ -30,7 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(
+        dest="command",
+        metavar="COMMAND",
+        help="Available commands",
+    )
 
     # version
     subparsers.add_parser("version", help="Show version information")

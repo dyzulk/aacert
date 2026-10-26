@@ -8,6 +8,19 @@ from tests.conftest import temp_config_dir
 
 
 class TestCLICommands(unittest.TestCase):
+    def test_help_uses_compact_command_placeholder(self):
+        for argv in ([], ["help"]):
+            with self.subTest(argv=argv):
+                buf = io.StringIO()
+                with patch("sys.stdout", buf):
+                    code = run_cli(argv)
+
+                self.assertEqual(code, 0)
+                output = buf.getvalue()
+                self.assertIn("COMMAND ...", output)
+                self.assertNotIn("{version,status", output)
+                self.assertIn("Show version information", output)
+
     def test_cli_version(self):
         buf = io.StringIO()
         with patch("sys.stdout", buf):
