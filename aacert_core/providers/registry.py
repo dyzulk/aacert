@@ -20,6 +20,17 @@ class ProviderRegistry:
         return dict(_BUILTIN_PROFILES)
 
     @classmethod
+    def get_available_provider_ids(cls, config: dict = None) -> list:
+        provider_ids = list(_BUILTIN_PROFILES)
+        if config:
+            provider_ids.extend(
+                provider_id
+                for provider_id in config.get("providers", {})
+                if provider_id not in _BUILTIN_PROFILES
+            )
+        return provider_ids
+
+    @classmethod
     def get_provider(cls, ca_id: str, config: dict = None) -> Optional[ProviderProfile]:
         ca_id = ca_id.lower().strip()
         profile = _BUILTIN_PROFILES.get(ca_id)

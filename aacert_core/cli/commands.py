@@ -96,7 +96,13 @@ def handle_test(args):
     profile = ProviderRegistry.get_provider(ca_id, status_info.get("config"))
 
     if not profile:
-        print(f"[{RED}ERROR{RESET}] Provider '{ca_id}' not found.")
+        available = ", ".join(
+            ProviderRegistry.get_available_provider_ids(status_info.get("config"))
+        )
+        print(
+            f"[{RED}ERROR{RESET}] Unknown CA provider '{ca_id}'. "
+            f"Available providers: {available}"
+        )
         sys.exit(1)
 
     url = profile.directory_url

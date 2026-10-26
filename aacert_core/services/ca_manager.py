@@ -7,6 +7,13 @@ from aacert_core.services.patch_manager import PatchManager
 
 class CAManager:
     @staticmethod
+    def _unknown_provider_error(ca_id: str, cfg: dict) -> ValueError:
+        available = ", ".join(ProviderRegistry.get_available_provider_ids(cfg))
+        return ValueError(
+            f"Unknown CA provider '{ca_id}'. Available providers: {available}"
+        )
+
+    @staticmethod
     def get_status() -> Dict[str, Any]:
         cfg = load_config()
         active_ca = cfg.get("active_ca", "letsencrypt")
@@ -28,7 +35,7 @@ class CAManager:
         ca_id = ca_id.lower().strip()
         profile = ProviderRegistry.get_provider(ca_id, cfg)
         if not profile:
-            raise ValueError(f"Unknown CA provider '{ca_id}'")
+            raise CAManager._unknown_provider_error(ca_id, cfg)
 
         cfg["active_ca"] = ca_id
         save_config(cfg)
@@ -51,7 +58,7 @@ class CAManager:
         cfg = load_config()
         ca_id = ca_id.lower().strip()
         if ca_id not in cfg.get("providers", {}):
-            raise ValueError(f"Unknown CA provider '{ca_id}'")
+            raise CAManager._unknown_provider_error(ca_id, cfg)
 
         cfg["active_ca"] = ca_id
         pinfo = cfg["providers"][ca_id]

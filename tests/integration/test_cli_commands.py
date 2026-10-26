@@ -72,6 +72,21 @@ class TestCLICommands(unittest.TestCase):
                 self.assertIn(suggestion, output)
                 self.assertNotIn("Available commands:", output)
 
+    def test_unknown_ca_provider_lists_available_providers(self):
+        with temp_config_dir() as (td, cfg_file):
+            with patch("aacert_core.storage.config_store.get_config_path", return_value=cfg_file):
+                output = io.StringIO()
+                with patch("sys.stdout", output):
+                    with self.assertRaises(SystemExit) as exit_info:
+                        run_cli(["set-ca", "ssl.com"])
+
+        self.assertEqual(exit_info.exception.code, 1)
+        self.assertIn("Unknown CA provider 'ssl.com'", output.getvalue())
+        self.assertIn(
+            "Available providers: letsencrypt, zerossl, google, ssl_com",
+            output.getvalue(),
+        )
+
     def test_cli_status_and_ca_switch(self):
         with temp_config_dir() as (td, cfg_file):
             with patch("aacert_core.storage.config_store.get_config_path", return_value=cfg_file):
