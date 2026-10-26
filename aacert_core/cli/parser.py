@@ -45,8 +45,8 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help=(
             "Provider ID (zerossl, google, ssl_com, letsencrypt). "
-            "For ssl_com, EAB is not required; SSL.com may require web-account "
-            "activation and a billing profile."
+            "SSL.com requires Account/ACME Key and HMAC credentials; it may also "
+            "require web-account activation and a billing profile."
         ),
     )
     p_setup.add_argument("--email", help="Account registration email")
@@ -67,14 +67,14 @@ def build_parser() -> argparse.ArgumentParser:
         "ca_name",
         help=(
             "Provider ID (letsencrypt, zerossl, google, ssl_com). "
-            "SSL.com does not require EAB, but may require web-account activation "
-            "and a billing profile."
+            "SSL.com requires EAB credentials and may require web-account "
+            "activation and a billing profile."
         ),
     )
 
     # set-eab
     p_seteab = subparsers.add_parser("set-eab", help="Set EAB KID and HMAC key")
-    p_seteab.add_argument("ca_name", help="Provider ID (zerossl, google)")
+    p_seteab.add_argument("ca_name", help="Provider ID (zerossl, google, ssl_com)")
     p_seteab.add_argument("--kid", required=True, help="EAB Key ID")
     p_seteab.add_argument("--hmac", required=True, help="EAB HMAC Key")
     p_seteab.add_argument("--email", help="Account email")

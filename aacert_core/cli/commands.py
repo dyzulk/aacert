@@ -13,9 +13,9 @@ from aacert_core.storage.config_store import SOURCE_ROOT
 def _print_ssl_com_note(ca_id):
     if ca_id.strip().lower() == "ssl_com":
         print(
-            f"[{YELLOW}NOTE{RESET}] SSL.com does not require EAB, but may require "
-            "you to activate your SSL.com web account and complete its billing "
-            "profile before ACME account registration or issuance."
+            f"[{YELLOW}NOTE{RESET}] SSL.com ACME setup requires Account/ACME Key "
+            "and HMAC (EAB) credentials. It may also require web-account "
+            "activation and a completed billing profile."
         )
         print(
             "       This does not mean the certificate is free: confirm the "
@@ -48,6 +48,11 @@ def handle_setup(args):
         ca_name = profile.name if profile else args.ca
         print(f"[{GREEN}OK{RESET}] Provider '{ca_name}' successfully configured.")
         _print_ssl_com_note(args.ca)
+        if args.ca.strip().lower() == "ssl_com" and not (args.kid and args.hmac):
+            print(
+                f"[{YELLOW}WARNING{RESET}] Add your SSL.com EAB credentials with:\n"
+                "  aacert setup --ca ssl_com --kid <KID> --hmac <HMAC>"
+            )
         if status_info.get("enabled"):
             print(f"[{GREEN}OK{RESET}] aacert is now ENABLED.")
         else:

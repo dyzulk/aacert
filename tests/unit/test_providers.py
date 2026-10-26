@@ -21,6 +21,21 @@ class TestProviders(unittest.TestCase):
         self.assertFalse(profile.eab_required)
         self.assertIn("letsencrypt.org", profile.directory_url)
 
+    def test_ssl_com_requires_eab_even_with_legacy_config(self):
+        profile = ProviderRegistry.get_provider(
+            "ssl_com",
+            {
+                "providers": {
+                    "ssl_com": {
+                        "eab_required": False,
+                        "directory_url": "https://acme.ssl.com/sslcom-dv-rsa",
+                    }
+                }
+            },
+        )
+        self.assertIsNotNone(profile)
+        self.assertTrue(profile.eab_required)
+
     def test_custom_credentials_override(self):
         mock_cfg = {
             "email": "global@example.com",

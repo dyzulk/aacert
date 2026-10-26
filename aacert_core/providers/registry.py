@@ -56,7 +56,7 @@ class ProviderRegistry:
                 name=pinfo.get("name", profile.name),
                 directory_url=pinfo.get("directory_url", profile.directory_url),
                 staging_url=pinfo.get("staging_url", profile.staging_url),
-                eab_required=pinfo.get("eab_required", profile.eab_required),
+                eab_required=profile.eab_required or pinfo.get("eab_required", False),
                 cert_days=pinfo.get("cert_days", profile.cert_days),
                 description=pinfo.get("description", profile.description),
                 eab_kid=pinfo.get("eab_kid"),

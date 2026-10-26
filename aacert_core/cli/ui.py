@@ -53,6 +53,7 @@ def print_status(status_info: dict, version: str) -> None:
     all_providers = cfg.get("providers", {})
     for key, p in all_providers.items():
         marker = "-> " if key == active_ca else "   "
-        eab_str = " (EAB required)" if p.get("eab_required") else " (No EAB)"
+        provider = ProviderRegistry.get_provider(key, cfg)
+        eab_str = " (EAB required)" if provider and provider.eab_required else " (No EAB)"
         print(f"  {marker}{key:<12} : {p.get('name')}{eab_str} [{p.get('cert_days')}d]")
     print("=" * 60)

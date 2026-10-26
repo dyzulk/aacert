@@ -11,10 +11,10 @@ from TLS DV domain validation. It is not normally needed for an ACME website
 certificate, but comply with account-specific requirements shown by SSL.com if
 issuance remains blocked.
 
-The project's SSL.com directory metadata does not require EAB, while SSL.com's
-ACME client guide describes Account/ACME Key and HMAC credentials. See the
-[provider guide](providers.md) for this distinction; consult SSL.com if an
-account-specific error indicates credentials are required.
+The directory metadata's `externalAccountRequired: false` flag does not negate
+SSL.com's account-specific onboarding instructions. If SSL.com emailed an
+Account/ACME Key and HMAC Key, configure both using `aacert setup --ca ssl_com`
+before retrying. See the [provider guide](providers.md).
 
 ## Check directory connectivity
 

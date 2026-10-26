@@ -6,7 +6,7 @@ SSL_COM_PROFILE = ProviderProfile(
     name="SSL.com",
     directory_url="https://acme.ssl.com/sslcom-dv-rsa",
     staging_url="https://acme-try.ssl.com/sslcom-dv-rsa",
-    eab_required=False,
+    eab_required=True,
     cert_days=90,
-    description="SSL.com DV 90-day certificate. No EAB required for basic registration."
+    description="SSL.com DV certificate. Account/ACME Key and HMAC credentials are required."
 )

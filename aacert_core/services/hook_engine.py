@@ -50,59 +50,75 @@ def apply_acme_hook(acme_obj) -> None:
         if ca_email:
             acme_obj._email = ca_email
 
-        # 4. Wrap newAccount / register to inject RFC 8555 EAB payload if required
-        if profile.eab_required:
-            kid = (profile.eab_kid or "").strip()
-            hmac_key = (profile.eab_hmac_key or "").strip()
-
-            if kid and hmac_key:
-                original_register = getattr(acme_obj, "register", None)
-
-                def custom_register(email=None):
-                    reg_email = email or ca_email or getattr(acme_obj, "_email", None)
-                    if not reg_email:
-                        reg_email = "admin@" + (acme_obj._domains[0] if getattr(acme_obj, '_domains', None) else "example.com")
-                    acme_obj._email = reg_email
-
-                    apis = acme_obj.get_apis()
-                    new_account_url = apis.get("newAccount") if isinstance(apis, dict) else None
-                    if not new_account_url:
-                        if original_register:
-                            return original_register(email)
-                        return None
-
-                    account_key = acme_obj.get_account_key()
-                    eab_payload = build_eab_object(
-                        kid=kid,
-                        hmac_key=hmac_key,
-                        account_key=account_key,
-                        new_account_url=new_account_url
+        # 4. Wrap register to send EAB when required or configured. Never retry
+        # without EAB after an EAB registration failure.
+        kid = (profile.eab_kid or "").strip()
+        hmac_key = (profile.eab_hmac_key or "").strip()
+        if profile.eab_required or kid or hmac_key:
+            def custom_register(email=None):
+                if not kid or not hmac_key:
+                    raise RuntimeError(
+                        f"Provider '{active_ca}' requires both EAB KID and HMAC credentials. "
+                        "Configure them with 'aacert setup --ca "
+                        f"{active_ca} --kid <KID> --hmac <HMAC>'."
                     )
 
-                    payload = {
-                        "termsOfServiceAgreed": True,
-                        "contact": [f"mailto:{reg_email}"],
-                        "externalAccountBinding": eab_payload
-                    }
+                reg_email = email or ca_email or getattr(acme_obj, "_email", None)
+                if not reg_email:
+                    reg_email = "admin@" + (
+                        acme_obj._domains[0]
+                        if getattr(acme_obj, "_domains", None)
+                        else "example.com"
+                    )
+                acme_obj._email = reg_email
 
-                    res = acme_obj.acme_request(new_account_url, payload)
-                    if res.status_code in [200, 201]:
-                        acme_obj._account = res.json()
-                        account_kid = res.headers.get("Location")
+                apis = acme_obj.get_apis()
+                new_account_url = apis.get("newAccount") if isinstance(apis, dict) else None
+                if not new_account_url:
+                    raise RuntimeError(
+                        f"ACME directory for '{active_ca}' did not provide a newAccount endpoint."
+                    )
+
+                account_key = acme_obj.get_account_key()
+                eab_payload = build_eab_object(
+                    kid=kid,
+                    hmac_key=hmac_key,
+                    account_key=account_key,
+                    new_account_url=new_account_url
+                )
+
+                payload = {
+                    "termsOfServiceAgreed": True,
+                    "contact": [f"mailto:{reg_email}"],
+                    "externalAccountBinding": eab_payload
+                }
+
+                res = acme_obj.acme_request(new_account_url, payload)
+                if res.status_code in [200, 201]:
+                    acme_obj._account = res.json()
+                    account_kid = res.headers.get("Location")
+                    if account_kid:
                         return account_kid
-                    elif res.status_code == 200 and "already exists" in res.text.lower():
-                        return res.headers.get("Location")
-                    elif res.status_code == 409 or "already exists" in res.text.lower():
-                        # Account already exists; retrieve existing account URL
-                        ex_res = acme_obj.acme_request(new_account_url, {"onlyReturnExisting": True})
-                        if ex_res.status_code in [200, 201]:
-                            return ex_res.headers.get("Location")
+                elif res.status_code == 409 or "already exists" in res.text.lower():
+                    ex_res = acme_obj.acme_request(
+                        new_account_url,
+                        {"onlyReturnExisting": True}
+                    )
+                    if ex_res.status_code in [200, 201]:
+                        account_kid = ex_res.headers.get("Location")
+                        if account_kid:
+                            return account_kid
+                    raise RuntimeError(
+                        "ACME account already exists, but the CA did not return "
+                        f"the existing account URL: HTTP {ex_res.status_code} {ex_res.text}"
+                    )
 
-                    if original_register:
-                        return original_register(email)
-                    return None
+                raise RuntimeError(
+                    f"ACME account registration with EAB failed: "
+                    f"HTTP {res.status_code} {res.text}"
+                )
 
-                acme_obj.register = custom_register
+            acme_obj.register = custom_register
 
         # 5. Handle async order finalization for CAs like ZeroSSL and Google PKI
         original_send_csr = getattr(acme_obj, "send_csr", None)

@@ -14,15 +14,22 @@ class MockAcmeInstance:
         self._apis = None
         self._email = "admin@example.com"
         self._config = {"orders": {}, "account": {}}
+        self.requests = []
+        self.response_status = 201
 
     def acme_request(self, url, payload):
+        self.requests.append((url, payload))
         class MockResponse:
-            status_code = 201
+            def __init__(self, status_code):
+                self.status_code = status_code
+
             headers = {"Location": "https://acme.test/account/12345"}
             text = '{"status": "valid"}'
+
             def json(self):
                 return {"status": "valid"}
-        return MockResponse()
+
+        return MockResponse(self.response_status)
 
     def get_account_key(self):
         from tests.conftest import MOCK_PEM_RSA
@@ -84,6 +91,72 @@ class TestHookEngine(unittest.TestCase):
         # Should remain standard Let's Encrypt
         self.assertEqual(instance._url, "https://acme-v02.api.letsencrypt.org/directory")
         self.assertEqual(instance._mod_index[False], "Production")
+
+    @patch("aacert_core.services.hook_engine.load_config")
+    def test_ssl_com_uses_eab_from_legacy_config(self, mock_load_config):
+        mock_load_config.return_value = {
+            "enabled": True,
+            "active_ca": "ssl_com",
+            "email": "user@domain.com",
+            "providers": {
+                "ssl_com": {
+                    "directory_url": "https://acme.ssl.com/sslcom-dv-rsa",
+                    "staging_url": "https://acme-try.ssl.com/sslcom-dv-rsa",
+                    "eab_required": False,
+                    "eab_kid": "test_ssl_account_key",
+                    "eab_hmac_key": "c2VjcmV0",
+                }
+            },
+        }
+
+        instance = MockAcmeInstance()
+        apply_acme_hook(instance)
+        self.assertEqual(instance.register(), "https://acme.test/account/12345")
+        self.assertEqual(len(instance.requests), 1)
+        url, payload = instance.requests[0]
+        self.assertEqual(url, "https://acme.ssl.com/sslcom-dv-rsa/newAccount")
+        self.assertIn("externalAccountBinding", payload)
+
+    @patch("aacert_core.services.hook_engine.load_config")
+    def test_ssl_com_requires_both_eab_credentials(self, mock_load_config):
+        mock_load_config.return_value = {
+            "enabled": True,
+            "active_ca": "ssl_com",
+            "providers": {
+                "ssl_com": {
+                    "directory_url": "https://acme.ssl.com/sslcom-dv-rsa",
+                    "staging_url": "https://acme-try.ssl.com/sslcom-dv-rsa",
+                    "eab_required": False,
+                }
+            },
+        }
+
+        instance = MockAcmeInstance()
+        apply_acme_hook(instance)
+        with self.assertRaisesRegex(RuntimeError, "requires both EAB KID and HMAC"):
+            instance.register()
+        self.assertEqual(instance.requests, [])
+
+    @patch("aacert_core.services.hook_engine.load_config")
+    def test_eab_registration_failure_does_not_retry_without_eab(self, mock_load_config):
+        mock_load_config.return_value = {
+            "enabled": True,
+            "active_ca": "ssl_com",
+            "providers": {
+                "ssl_com": {
+                    "eab_kid": "test_ssl_account_key",
+                    "eab_hmac_key": "c2VjcmV0",
+                }
+            },
+        }
+
+        instance = MockAcmeInstance()
+        instance.response_status = 403
+        apply_acme_hook(instance)
+        with self.assertRaisesRegex(RuntimeError, "registration with EAB failed"):
+            instance.register()
+        self.assertEqual(len(instance.requests), 1)
+        self.assertIn("externalAccountBinding", instance.requests[0][1])
 
 
 if __name__ == "__main__":

@@ -107,8 +107,9 @@ class TestCLICommands(unittest.TestCase):
                     ])
 
         self.assertEqual(code, 0)
-        self.assertIn("does not require EAB", output.getvalue())
-        self.assertIn("activate your SSL.com web account", output.getvalue())
+        self.assertIn("requires Account/ACME Key and HMAC (EAB) credentials", output.getvalue())
+        self.assertIn("Add your SSL.com EAB credentials", output.getvalue())
+        self.assertIn("web-account activation", output.getvalue())
         self.assertIn("confirm the selected SSL.com product/order is Free DV ($0)", output.getvalue())
 
     def test_unknown_ca_provider_lists_available_providers(self):
