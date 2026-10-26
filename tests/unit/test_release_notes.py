@@ -1,5 +1,5 @@
-import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -11,6 +11,7 @@ sys.path.insert(0, str(SCRIPTS_PATH))
 from generate_release_notes.formatting import get_commit_subjects
 from generate_release_notes.generator import generate_local_fallback_notes, generate_summary
 from generate_release_notes.providers import call_groq_api
+from test_release_notes import parse_env_file
 
 
 class TestReleaseNotes(unittest.TestCase):
@@ -32,21 +33,40 @@ class TestReleaseNotes(unittest.TestCase):
 
         self.assertEqual(subjects, ["Fix renewal flow"])
 
-    @patch("generate_release_notes.providers.urllib.request.urlopen")
-    def test_groq_api_sends_expected_request(self, urlopen):
-        response = Mock()
-        response.read.return_value = json.dumps({
-            "choices": [{"message": {"content": "Release summary"}}]
-        }).encode("utf-8")
-        urlopen.return_value.__enter__.return_value = response
+    def test_env_file_parser_reads_quoted_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            env_file = Path(directory) / "secrets.env"
+            env_file.write_text(
+                "# local API keys\nGEMINI_API_KEY='gemini-value'\n"
+                "export GROQ_API_KEY=\"groq-value\"\n",
+                encoding="utf-8",
+            )
+
+            values = parse_env_file(env_file)
+
+        self.assertEqual(values, {
+            "GEMINI_API_KEY": "gemini-value",
+            "GROQ_API_KEY": "groq-value",
+        })
+
+    @patch("generate_release_notes.providers.get_groq_client")
+    def test_groq_api_uses_official_sdk(self, get_groq_client):
+        completion = Mock()
+        completion.choices = [Mock(message=Mock(content="Release summary"))]
+        client = Mock()
+        client.chat.completions.create.return_value = completion
+        get_groq_client.return_value = client
 
         result = call_groq_api("prompt text", "groq-secret")
 
-        request = urlopen.call_args.args[0]
         self.assertEqual(result, "Release summary")
-        self.assertEqual(request.full_url, "https://api.groq.com/openai/v1/chat/completions")
-        self.assertEqual(request.get_header("Authorization"), "Bearer groq-secret")
-        self.assertEqual(json.loads(request.data)["model"], "openai/gpt-oss-20b")
+        get_groq_client.assert_called_once_with("groq-secret")
+        client.chat.completions.create.assert_called_once_with(
+            model="openai/gpt-oss-20b",
+            messages=[{"role": "user", "content": "prompt text"}],
+            temperature=0.2,
+            max_completion_tokens=2048,
+        )
 
     @patch("generate_release_notes.generator.build_prompt", return_value="release prompt")
     @patch("generate_release_notes.generator.call_groq_api", return_value="Groq summary")

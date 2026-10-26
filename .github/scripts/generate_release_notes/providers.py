@@ -73,42 +73,30 @@ def call_gemini_api(prompt: str, api_key: str) -> str:
     )
 
 
-def call_groq_api(prompt: str, api_key: str) -> str:
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    payload = json.dumps({
-        "model": "openai/gpt-oss-20b",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.2,
-        "max_tokens": 2048,
-    }).encode("utf-8")
-    for attempt in range(1, 4):
-        try:
-            print(f"[release-notes] Querying Groq (attempt {attempt}/3)...")
-            request = urllib.request.Request(
-                url,
-                data=payload,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-            )
-            with urllib.request.urlopen(request, timeout=30) as response:
-                data = json.loads(response.read().decode("utf-8"))
-            choices = data.get("choices", [])
-            if choices:
-                content = choices[0].get("message", {}).get("content")
-                if content and content.strip():
-                    print("[release-notes] Successfully generated release notes with Groq.")
-                    return sanitize_no_emoji(content)
-            raise RuntimeError("Groq returned no text")
-        except urllib.error.HTTPError as error:
-            body = error.read().decode("utf-8", errors="ignore")
-            print(f"[release-notes] Groq returned HTTP {error.code}: {body[:160]}")
-            if error.code not in (408, 429, 500, 502, 503, 504) or attempt == 3:
-                raise
-        except (urllib.error.URLError, TimeoutError, RuntimeError, ValueError):
-            if attempt == 3:
-                raise
-        time.sleep(attempt)
+def get_groq_client(api_key: str):
+    try:
+        from groq import Groq
+    except ImportError as error:
+        raise RuntimeError(
+            "Groq Python SDK is not installed; install "
+            ".github/scripts/requirements-release-notes.txt"
+        ) from error
 
-    raise RuntimeError("Failed to generate response from Groq")
+    return Groq(api_key=api_key, timeout=30, max_retries=2)
+
+
+def call_groq_api(prompt: str, api_key: str) -> str:
+    print("[release-notes] Querying Groq with the official Python SDK...")
+    client = get_groq_client(api_key)
+    completion = client.chat.completions.create(
+        model="openai/gpt-oss-20b",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+        max_completion_tokens=2048,
+    )
+    content = completion.choices[0].message.content if completion.choices else None
+    if not content or not content.strip():
+        raise RuntimeError("Groq returned no text")
+
+    print("[release-notes] Successfully generated release notes with Groq.")
+    return sanitize_no_emoji(content)

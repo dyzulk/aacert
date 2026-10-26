@@ -43,14 +43,15 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Generate Release Notes
+        run: |
+          python3 -m pip install -r .github/scripts/requirements-release-notes.txt
+          PYTHONPATH=.github/scripts python3 -m generate_release_notes "${VERSION}" "${OUTPUT_PATH}"
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           VERSION: ${{ steps.resolve_tag.outputs.tag }}
           OUTPUT_PATH: release-notes.md
           PROMPT_TEMPLATE: .github/prompts/release-notes-prompt.md
-        run: |
-          PYTHONPATH=.github/scripts python3 -m generate_release_notes "${VERSION}" "${OUTPUT_PATH}"
 
       - name: Package Release Tarball (Respecting .gitattributes)
         run: |
