@@ -58,7 +58,7 @@ jobs:
           git archive --format=tar.gz --prefix=aacert/ -o aacert.tar.gz HEAD
 
       - name: Upload Release Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-assets
           path: |
