@@ -119,15 +119,16 @@ jobs:
           TITLE="aacert ${TAG}"
 
           REPOSITORY_DATA=$(gh api graphql \
-            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { id discussionCategories(first: 50) { nodes { id name } } } }' \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { id labels(first: 100) { nodes { id name } } discussionCategories(first: 50) { nodes { id name } } } }' \
             -F owner="${OWNER}" \
             -F name="${REPO}")
 
           REPOSITORY_ID=$(printf '%s' "${REPOSITORY_DATA}" | jq -r '.data.repository.id')
+          RELEASE_LABEL_ID=$(printf '%s' "${REPOSITORY_DATA}" | jq -r '.data.repository.labels.nodes[] | select(.name == "release") | .id' | head -n 1)
           CATEGORY_ID=$(printf '%s' "${REPOSITORY_DATA}" | jq -r '.data.repository.discussionCategories.nodes[] | select(.name == "Announcements") | .id')
 
-          if [ -z "${REPOSITORY_ID}" ] || [ -z "${CATEGORY_ID}" ]; then
-            echo "Could not find the repository or its Announcements discussion category." >&2
+          if [ -z "${REPOSITORY_ID}" ] || [ -z "${CATEGORY_ID}" ] || [ -z "${RELEASE_LABEL_ID}" ]; then
+            echo "Could not find the repository, its Announcements category, or the release label." >&2
             exit 1
           fi
 
@@ -140,21 +141,29 @@ jobs:
           DISCUSSION_ID=$(printf '%s' "${DISCUSSIONS}" | jq -r --arg title "${TITLE}" '.data.repository.discussions.nodes[] | select(.title == $title) | .id' | head -n 1)
 
           if [ -n "${DISCUSSION_ID}" ]; then
-            gh api graphql \
-              -f query='mutation($discussionId: ID!, $title: String!, $body: String!) { updateDiscussion(input: {discussionId: $discussionId, title: $title, body: $body}) { discussion { url } } }' \
+            DISCUSSION_DATA=$(gh api graphql \
+              -f query='mutation($discussionId: ID!, $title: String!, $body: String!) { updateDiscussion(input: {discussionId: $discussionId, title: $title, body: $body}) { discussion { id url } } }' \
               -F discussionId="${DISCUSSION_ID}" \
               -F title="${TITLE}" \
-              -F body=@release-notes.md \
-              --jq '.data.updateDiscussion.discussion.url'
+              -F body=@release-notes.md)
           else
-            gh api graphql \
-              -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) { discussion { url } } }' \
+            DISCUSSION_DATA=$(gh api graphql \
+              -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}) { discussion { id url } } }' \
               -F repositoryId="${REPOSITORY_ID}" \
               -F categoryId="${CATEGORY_ID}" \
               -F title="${TITLE}" \
-              -F body=@release-notes.md \
-              --jq '.data.createDiscussion.discussion.url'
+              -F body=@release-notes.md)
           fi
+
+          DISCUSSION_ID=$(printf '%s' "${DISCUSSION_DATA}" | jq -r '.data.updateDiscussion.discussion.id // .data.createDiscussion.discussion.id')
+          DISCUSSION_URL=$(printf '%s' "${DISCUSSION_DATA}" | jq -r '.data.updateDiscussion.discussion.url // .data.createDiscussion.discussion.url')
+
+          gh api graphql \
+            -f query='mutation($labelableId: ID!, $labelId: ID!) { addLabelsToLabelable(input: {labelableId: $labelableId, labelIds: [$labelId]}) { clientMutationId } }' \
+            -F labelableId="${DISCUSSION_ID}" \
+            -F labelId="${RELEASE_LABEL_ID}" >/dev/null
+
+          echo "Release announcement: ${DISCUSSION_URL}"
 
       - name: Purge jsDelivr CDN Cache
         continue-on-error: true
