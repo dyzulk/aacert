@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a specific improvement to aacert.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: "For early-stage proposals and general questions, use GitHub Discussions. Do not include credentials or other secrets."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Explain the need this proposal would address.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or capability you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternatives or workarounds you have considered.
+    validations:
+      required: false

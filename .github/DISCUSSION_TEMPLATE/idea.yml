@@ -1,0 +1,26 @@
+title: "Idea: "
+body:
+  - type: markdown
+    attributes:
+      value: "Use this template to discuss an early-stage idea. For a specific, well-defined feature request, use the feature request issue template."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: Explain the user need or opportunity.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed idea
+      description: Describe the possible improvement.
+    validations:
+      required: true
+  - type: textarea
+    id: discussion
+    attributes:
+      label: Open questions
+      description: List trade-offs or questions that would benefit from community input.
+    validations:
+      required: false

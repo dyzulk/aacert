@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible defect in aacert.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Before submitting, search existing issues and Discussions for a similar report. Do not include credentials, private keys, EAB values, or other secrets."
+  - type: input
+    id: version
+    attributes:
+      label: aacert version
+      description: Include the release version or commit identifier.
+      placeholder: "For example, v1.2.3"
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Certificate authority or provider
+      description: Identify the provider involved, if applicable.
+      placeholder: "For example, ZeroSSL or Google Public CA"
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include relevant aaPanel, operating system, and Python versions.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the exact steps and sanitized commands needed to reproduce the issue.
+      placeholder: "1. Run ...\n2. Select ...\n3. Observe ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Describe what happened and include sanitized error output.
+      render: text
+    validations:
+      required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and community support
+    url: https://github.com/dyzulk/aacert/discussions
+    about: Ask usage questions and get help from the community.
+  - name: Documentation
+    url: https://github.com/dyzulk/aacert/tree/main/docs
+    about: Review installation, provider, CLI, and troubleshooting guides.

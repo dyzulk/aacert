@@ -1,0 +1,20 @@
+changelog:
+  categories:
+    - title: Features
+      labels:
+        - enhancement
+        - feature
+    - title: Bug Fixes
+      labels:
+        - bug
+        - bugfix
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Maintenance
+      labels:
+        - dependencies
+        - maintenance
+    - title: Other Changes
+      labels:
+        - "*"

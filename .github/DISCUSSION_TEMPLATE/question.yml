@@ -1,0 +1,27 @@
+title: "Question: "
+body:
+  - type: markdown
+    attributes:
+      value: "Search the documentation and existing Discussions before posting. Never include credentials, private keys, EAB values, or access tokens."
+  - type: input
+    id: version
+    attributes:
+      label: aacert version
+      description: Include the release version, if applicable.
+    validations:
+      required: false
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: State your question and what you are trying to accomplish.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Relevant context
+      description: Include sanitized commands, error output, and environment details.
+      render: text
+    validations:
+      required: false
