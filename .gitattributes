@@ -18,6 +18,8 @@ tmp export-ignore
 tmp/** export-ignore
 
 # Documentation
+docs export-ignore
+docs/** export-ignore
 *.md export-ignore
 LICENSE export-ignore
 
