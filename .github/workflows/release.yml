@@ -24,7 +24,7 @@ jobs:
       release_tag: ${{ steps.resolve_tag.outputs.tag }}
     steps:
       - name: Checkout Source Code & History
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download Release Assets
         uses: actions/download-artifact@v8
