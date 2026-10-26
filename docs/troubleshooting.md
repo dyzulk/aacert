@@ -2,6 +2,11 @@
 
 ## SSL.com ACME account registration is rejected
 
+The bundled SSL.com provider may be marked under maintenance while an
+authorization issue is investigated. In that mode aacert retains the provider
+and its credentials but stops issuance with an explicit notice. Use another
+provider or native Let's Encrypt until SSL.com issuance is re-enabled.
+
 Review the full ACME error returned by aaPanel. SSL.com may require the customer
 account to be activated and a billing profile to be completed. Follow any
 instructions sent to the account email and check the [SSL.com customer portal](https://secure.ssl.com/).

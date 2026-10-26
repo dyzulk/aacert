@@ -110,6 +110,7 @@ class TestCLICommands(unittest.TestCase):
         self.assertIn("requires Account/ACME Key and HMAC (EAB) credentials", output.getvalue())
         self.assertIn("Add your SSL.com EAB credentials", output.getvalue())
         self.assertIn("web-account activation", output.getvalue())
+        self.assertIn("temporarily paused in aacert", output.getvalue())
         self.assertIn("confirm the selected SSL.com product/order is Free DV ($0)", output.getvalue())
 
     def test_unknown_ca_provider_lists_available_providers(self):

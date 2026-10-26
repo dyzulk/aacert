@@ -27,6 +27,17 @@ def apply_acme_hook(acme_obj) -> None:
         if not profile:
             return
 
+        if profile.maintenance:
+            def maintenance_response(*args, **kwargs):
+                return {
+                    "status": False,
+                    "msg": profile.maintenance_message or
+                    f"Provider '{profile.name}' is temporarily under maintenance."
+                }
+
+            acme_obj.apply_cert_domain = maintenance_response
+            return
+
         is_debug = getattr(acme_obj, "_debug", False)
         custom_dir_url = profile.get_active_url(is_debug)
         if not custom_dir_url:

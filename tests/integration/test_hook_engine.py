@@ -103,6 +103,7 @@ class TestHookEngine(unittest.TestCase):
                     "directory_url": "https://acme.ssl.com/sslcom-dv-rsa",
                     "staging_url": "https://acme-try.ssl.com/sslcom-dv-rsa",
                     "eab_required": False,
+                    "maintenance": False,
                     "eab_kid": "test_ssl_account_key",
                     "eab_hmac_key": "c2VjcmV0",
                 }
@@ -127,6 +128,7 @@ class TestHookEngine(unittest.TestCase):
                     "directory_url": "https://acme.ssl.com/sslcom-dv-rsa",
                     "staging_url": "https://acme-try.ssl.com/sslcom-dv-rsa",
                     "eab_required": False,
+                    "maintenance": False,
                 }
             },
         }
@@ -146,6 +148,7 @@ class TestHookEngine(unittest.TestCase):
                 "ssl_com": {
                     "eab_kid": "test_ssl_account_key",
                     "eab_hmac_key": "c2VjcmV0",
+                    "maintenance": False,
                 }
             },
         }
@@ -157,6 +160,32 @@ class TestHookEngine(unittest.TestCase):
             instance.register()
         self.assertEqual(len(instance.requests), 1)
         self.assertIn("externalAccountBinding", instance.requests[0][1])
+
+    @patch("aacert_core.services.hook_engine.load_config")
+    def test_ssl_com_maintenance_blocks_certificate_issuance(self, mock_load_config):
+        mock_load_config.return_value = {
+            "enabled": True,
+            "active_ca": "ssl_com",
+            "providers": {
+                "ssl_com": {
+                    "maintenance": True,
+                    "maintenance_message": "SSL.com is temporarily under maintenance.",
+                }
+            },
+        }
+
+        instance = MockAcmeInstance()
+        instance.apply_cert_domain = lambda *args, **kwargs: {
+            "status": True,
+            "msg": "certificate issued",
+        }
+        apply_acme_hook(instance)
+        result = instance.apply_cert_domain(["site.example"], "dns")
+
+        self.assertFalse(result["status"])
+        self.assertEqual(result["msg"], "SSL.com is temporarily under maintenance.")
+        self.assertEqual(instance._url, "https://acme-v02.api.letsencrypt.org/directory")
+        self.assertEqual(instance.requests, [])
 
 
 if __name__ == "__main__":

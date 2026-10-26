@@ -42,6 +42,8 @@
       "eab_hmac_key": "",
       "email": "",
       "cert_days": 90,
+      "maintenance": true,
+      "maintenance_message": "SSL.com issuance is temporarily paused while ACME authorization delays are investigated. Choose another provider or aaPanel's native Let's Encrypt.",
       "description": "SSL.com DV certificate. Account/ACME Key and HMAC credentials are required."
     }
   }

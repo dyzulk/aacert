@@ -61,7 +61,12 @@ class ProviderRegistry:
                 description=pinfo.get("description", profile.description),
                 eab_kid=pinfo.get("eab_kid"),
                 eab_hmac_key=pinfo.get("eab_hmac_key"),
-                email=pinfo.get("email") or config.get("email")
+                email=pinfo.get("email") or config.get("email"),
+                maintenance=pinfo.get("maintenance", profile.maintenance),
+                maintenance_message=pinfo.get(
+                    "maintenance_message",
+                    profile.maintenance_message
+                )
             )
 
         return profile

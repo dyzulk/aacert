@@ -36,6 +36,14 @@ class TestProviders(unittest.TestCase):
         self.assertIsNotNone(profile)
         self.assertTrue(profile.eab_required)
 
+    def test_ssl_com_maintenance_default_can_be_overridden(self):
+        self.assertTrue(ProviderRegistry.get_provider("ssl_com", {"providers": {}}).maintenance)
+        profile = ProviderRegistry.get_provider(
+            "ssl_com",
+            {"providers": {"ssl_com": {"maintenance": False}}},
+        )
+        self.assertFalse(profile.maintenance)
+
     def test_custom_credentials_override(self):
         mock_cfg = {
             "email": "global@example.com",

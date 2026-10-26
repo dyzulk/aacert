@@ -32,7 +32,14 @@ def print_status(status_info: dict, version: str) -> None:
     profile = status_info.get("profile")
     active_ca = status_info.get("active_ca")
     ca_name = profile.name if profile else active_ca
-    print(f" Active CA Provider  : {CYAN}{ca_name}{RESET} (ID: {active_ca})")
+    maintenance = (
+        f" [{YELLOW}UNDER MAINTENANCE{RESET}]"
+        if profile and profile.maintenance
+        else ""
+    )
+    print(f" Active CA Provider  : {CYAN}{ca_name}{RESET} (ID: {active_ca}){maintenance}")
+    if profile and profile.maintenance_message:
+        print(f" Provider Notice     : {profile.maintenance_message}")
     print(f" Directory URL       : {profile.directory_url if profile else 'N/A'}")
     print(f" Cert Validity Period: ~{profile.cert_days if profile else 90} days")
 
@@ -55,5 +62,6 @@ def print_status(status_info: dict, version: str) -> None:
         marker = "-> " if key == active_ca else "   "
         provider = ProviderRegistry.get_provider(key, cfg)
         eab_str = " (EAB required)" if provider and provider.eab_required else " (No EAB)"
-        print(f"  {marker}{key:<12} : {p.get('name')}{eab_str} [{p.get('cert_days')}d]")
+        status = " [UNDER MAINTENANCE]" if provider and provider.maintenance else ""
+        print(f"  {marker}{key:<12} : {p.get('name')}{eab_str}{status} [{p.get('cert_days')}d]")
     print("=" * 60)

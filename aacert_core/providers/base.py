@@ -15,6 +15,8 @@ class ProviderProfile:
     eab_kid: Optional[str] = None
     eab_hmac_key: Optional[str] = None
     email: Optional[str] = None
+    maintenance: bool = False
+    maintenance_message: str = ""
 
     def get_active_url(self, is_debug: bool = False) -> str:
         return self.staging_url if is_debug else self.directory_url

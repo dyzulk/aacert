@@ -13,6 +13,11 @@ from aacert_core.storage.config_store import SOURCE_ROOT
 def _print_ssl_com_note(ca_id):
     if ca_id.strip().lower() == "ssl_com":
         print(
+            f"[{YELLOW}MAINTENANCE{RESET}] SSL.com certificate issuance is "
+            "temporarily paused in aacert while ACME authorization delays are investigated."
+        )
+        print("       The provider and credentials are retained; choose another CA to issue certificates.")
+        print(
             f"[{YELLOW}NOTE{RESET}] SSL.com ACME setup requires Account/ACME Key "
             "and HMAC (EAB) credentials. It may also require web-account "
             "activation and a completed billing profile."

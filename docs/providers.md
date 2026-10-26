@@ -42,6 +42,20 @@ aacert setup --ca google \
 
 ## SSL.com
 
+### Temporary issuance pause
+
+The aacert SSL.com provider is currently marked **under maintenance** because
+the observed ACME authorization remained pending even while the DNS TXT value
+was visible on both authoritative nameservers and a public resolver. The
+provider remains registered, its credentials are preserved, and you can still
+configure it or test directory connectivity; however, aacert will return a
+clear maintenance message instead of submitting certificate issuance requests.
+Choose another CA or aaPanel's native Let's Encrypt until this is cleared.
+
+This gate is controlled by the `maintenance` and `maintenance_message` fields
+for `ssl_com` in `config.json`. To re-enable issuance after verification, set
+`maintenance` to `false`, remove or update the notice, and restart aaPanel.
+
 The configured directory is [SSL.com DV RSA](https://acme.ssl.com/sslcom-dv-rsa).
 Although its directory metadata reports `externalAccountRequired: false`,
 SSL.com's account onboarding email provides an Account/ACME Key and HMAC Key
