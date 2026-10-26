@@ -29,6 +29,12 @@ def build_parser() -> argparse.ArgumentParser:
         description="aacert - Multi-CA ACME Manager for aaPanel",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s v{__version__}",
+    )
 
     subparsers = parser.add_subparsers(
         dest="command",
